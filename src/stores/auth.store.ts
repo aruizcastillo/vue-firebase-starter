@@ -25,6 +25,8 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
 
   let initializationPromise: Promise<void> | null = null
+  let profileSyncPromise: Promise<UserProfile> | null = null
+  let profileSyncUserId: string | null = null
 
   const isAuthenticated = computed(() => user.value !== null)
 
@@ -43,7 +45,11 @@ export const useAuthStore = defineStore('auth', () => {
 
     initializationPromise = new Promise((resolve) => {
       observeAuthState(async (currentUser) => {
-        error.value = null
+        const foregroundOperationInProgress = loading.value
+
+        if (!foregroundOperationInProgress) {
+          error.value = null
+        }
 
         try {
           if (currentUser) {
@@ -55,7 +61,10 @@ export const useAuthStore = defineStore('auth', () => {
         } catch (caughtError) {
           user.value = currentUser
           profile.value = null
-          error.value = getProfileErrorMessage(caughtError)
+
+          if (!foregroundOperationInProgress) {
+            error.value = getProfileErrorMessage(caughtError)
+          }
         } finally {
           initialized.value = true
           resolve()
@@ -74,6 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
       const credential = await registerWithEmail(email, password)
 
       await syncAuthenticatedUser(credential.user)
+      error.value = null
 
       return true
     } catch (caughtError) {
@@ -92,6 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
       const credential = await loginWithEmail(email, password)
 
       await syncAuthenticatedUser(credential.user)
+      error.value = null
 
       return true
     } catch (caughtError) {
@@ -110,6 +121,7 @@ export const useAuthStore = defineStore('auth', () => {
       const credential = await loginWithGoogle()
 
       await syncAuthenticatedUser(credential.user)
+      error.value = null
 
       return true
     } catch (caughtError) {
@@ -122,7 +134,26 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function syncAuthenticatedUser(currentUser: User): Promise<void> {
     user.value = currentUser
-    profile.value = await ensureUserProfile(currentUser)
+
+    if (!profileSyncPromise || profileSyncUserId !== currentUser.uid) {
+      profileSyncUserId = currentUser.uid
+      profileSyncPromise = ensureUserProfile(currentUser)
+    }
+
+    const activeSyncPromise = profileSyncPromise
+
+    try {
+      const syncedProfile = await activeSyncPromise
+
+      if (user.value?.uid === currentUser.uid) {
+        profile.value = syncedProfile
+      }
+    } finally {
+      if (profileSyncPromise === activeSyncPromise) {
+        profileSyncPromise = null
+        profileSyncUserId = null
+      }
+    }
   }
 
   async function updateProfile(displayName: string): Promise<boolean> {

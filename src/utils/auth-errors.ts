@@ -7,6 +7,10 @@ const authErrorMessages: Record<string, string> = {
 
   'auth/invalid-credential': 'The email address or password is incorrect.',
 
+  'auth/user-not-found': 'The email address or password is incorrect.',
+
+  'auth/wrong-password': 'The email address or password is incorrect.',
+
   'auth/weak-password': 'The password must be at least 6 characters long.',
 
   'auth/user-disabled': 'This account has been disabled.',
