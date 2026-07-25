@@ -1,6 +1,6 @@
 # Vue + Firebase Starter
 
-## Phase 1
+## Phase 1 - Setting up the Firebase project
 
 ### 1. Create a Firebase project
 
@@ -221,7 +221,7 @@ vue-firebase-starter/
 └── src/
 ```
 
-Create `.firebaserc`:
+Check `.firebaserc`:
 
 ```json
 {
@@ -263,61 +263,63 @@ It should look approximately like this:
 }
 ```
 
-### 10. Test the emulators
+## Phase 2 — Authentication
 
-Temporarily change `.env`:
+### 1. Enable Google in Firebase
+
+In Firebase Console:
+
+```text
+Authentication
+→ Sign-in method
+→ Google
+→ Enable
+```
+
+Select a support email and save.
+
+The web SDK supports authentication through Google using `GoogleAuthProvider` and `signInWithPopup`. On the first login, Firebase automatically creates the Authentication account.
+
+### 2. Test with emulators
+
+In `.env`:
 
 ```env
 VITE_USE_FIREBASE_EMULATORS=true
 ```
 
-Start Firebase:
+Terminal 1:
 
 ```bash
 pnpm firebase:emulators
 ```
 
-In another terminal:
+Terminal 2:
 
 ```bash
 pnpm dev
 ```
 
-Open:
+Test this flow:
 
 ```text
-http://127.0.0.1:4000
+1. Open /
+2. It should redirect to /login?redirect=/
+3. Open /register
+4. Create an account
+5. It should redirect to /
+6. Reload the page
+7. The session should remain active
+8. Try to open /login
+9. It should redirect to /
+10. Sign out
+11. It should return to /login
+12. Test password recovery
+13. Test Google login
 ```
 
-You should see:
+When using Google with emulators, the flow does not use a real account: the emulator displays an interface where you can enter simulated provider data.
 
-```text
-Authentication Emulator
-Firestore Emulator
-```
+The profile document, its retrieval, and its synchronization with the store will be implemented in the next phase.
 
-Then also run:
-
-```bash
-pnpm type-check
-pnpm lint
-pnpm build
-```
-
-### Definition of done
-
-```text
-Firebase SDK installed                 ✓
-Typed environment variables            ✓
-Required variables validated           ✓
-Firebase App initialized               ✓
-Authentication initialized             ✓
-Firestore initialized                  ✓
-Emulators configurable via environment ✓
-Firebase CLI installed locally         ✓
-Auth Emulator working                  ✓
-Firestore Emulator working             ✓
-Build and type-check passing           ✓
-```
-
-There should still be no user logic, login, registration, document, or authentication-store logic. That begins in the next phase.
+## Phase 3

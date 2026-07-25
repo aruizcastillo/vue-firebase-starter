@@ -1,0 +1,81 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+
+import { useAuthStore } from '@/stores/auth.store'
+
+const emit = defineEmits<{
+  success: []
+}>()
+
+const authStore = useAuthStore()
+
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const validationError = ref<string | null>(null)
+
+async function handleSubmit(): Promise<void> {
+  validationError.value = null
+  authStore.clearError()
+
+  if (password.value.length < 6) {
+    validationError.value = 'The password must be at least 6 characters long.'
+    return
+  }
+
+  if (password.value !== confirmPassword.value) {
+    validationError.value = 'The passwords do not match.'
+    return
+  }
+
+  const succeeded = await authStore.register(email.value.trim(), password.value)
+
+  if (succeeded) {
+    emit('success')
+  }
+}
+</script>
+
+<template>
+  <form class="auth-form" @submit.prevent="handleSubmit">
+    <div class="field">
+      <label for="register-email"> Email address </label>
+
+      <input id="register-email" v-model="email" type="email" autocomplete="email" required />
+    </div>
+
+    <div class="field">
+      <label for="register-password"> Password </label>
+
+      <input
+        id="register-password"
+        v-model="password"
+        type="password"
+        autocomplete="new-password"
+        minlength="6"
+        required
+      />
+    </div>
+
+    <div class="field">
+      <label for="confirm-password"> Confirm password </label>
+
+      <input
+        id="confirm-password"
+        v-model="confirmPassword"
+        type="password"
+        autocomplete="new-password"
+        minlength="6"
+        required
+      />
+    </div>
+
+    <p v-if="validationError || authStore.error" class="form-error">
+      {{ validationError ?? authStore.error }}
+    </p>
+
+    <button type="submit" :disabled="authStore.loading">
+      {{ authStore.loading ? 'Creating account…' : 'Create account' }}
+    </button>
+  </form>
+</template>
