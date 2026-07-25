@@ -9,6 +9,12 @@ export function registerRouterGuards(router: Router): void {
     await authStore.initialize()
 
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+      if (to.name === 'home') {
+        return {
+          name: 'welcome',
+        }
+      }
+
       return {
         name: 'login',
         query: {

@@ -18,13 +18,11 @@ async function handleSuccess(): Promise<void> {
 </script>
 
 <template>
-  <main class="auth-page">
-    <section class="auth-card">
-      <h1>Create an account</h1>
+  <section class="auth-card">
+    <h1>Create an account</h1>
 
-      <RegisterForm @success="handleSuccess" />
+    <RegisterForm @success="handleSuccess" />
 
-      <RouterLink to="/login"> I already have an account </RouterLink>
-    </section>
-  </main>
+    <RouterLink to="/login"> I already have an account </RouterLink>
+  </section>
 </template>

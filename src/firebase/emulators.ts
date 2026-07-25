@@ -12,11 +12,11 @@ export function connectFirebaseEmulators(): void {
     return
   }
 
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', {
+  connectAuthEmulator(auth, 'http://localhost:9099', {
     disableWarnings: true,
   })
 
-  connectFirestoreEmulator(db, '127.0.0.1', 8080)
+  connectFirestoreEmulator(db, 'localhost', 8080)
 
   connected = true
 }

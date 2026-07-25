@@ -1,37 +1,19 @@
 <script setup lang="ts">
-import { RouterLink, useRouter } from 'vue-router'
+import { computed } from 'vue'
 
 import { useAuthStore } from '@/stores/auth.store'
 
-const router = useRouter()
 const authStore = useAuthStore()
 
-async function handleLogout(): Promise<void> {
-  const succeeded = await authStore.signOut()
-
-  if (succeeded) {
-    await router.replace('/login')
-  }
-}
+const userLabel = computed(() => {
+  return authStore.profile?.displayName || authStore.user?.email || 'user'
+})
 </script>
 
 <template>
-  <main>
-    <h1>Vue Firebase Starter</h1>
+  <section class="home-page">
+    <h1>Hello, {{ userLabel }}</h1>
 
-    <p>
-      Hello,
-      {{ authStore.profile?.displayName || authStore.user?.email || 'user' }}.
-    </p>
-
-    <nav>
-      <RouterLink to="/profile"> Edit Profile </RouterLink>
-    </nav>
-
-    <p v-if="authStore.error" class="form-error">
-      {{ authStore.error }}
-    </p>
-
-    <button type="button" :disabled="authStore.loading" @click="handleLogout">Logout</button>
-  </main>
+    <p>The authentication and profile are configured correctly.</p>
+  </section>
 </template>

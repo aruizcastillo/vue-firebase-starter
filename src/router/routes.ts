@@ -3,47 +3,61 @@ import type { RouteRecordRaw } from 'vue-router'
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'home',
-    component: () => import('@/pages/HomePage.vue'),
+    component: () => import('@/layouts/AppLayout.vue'),
     meta: {
       requiresAuth: true,
     },
+    children: [
+      {
+        path: '',
+        name: 'home',
+        component: () => import('@/pages/HomePage.vue'),
+      },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('@/pages/ProfilePage.vue'),
+      },
+    ],
   },
   {
-    path: '/profile',
-    name: 'profile',
-    component: () => import('@/pages/ProfilePage.vue'),
-    meta: {
-      requiresAuth: true,
-    },
+    path: '/welcome',
+    component: () => import('@/layouts/PublicLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'welcome',
+        component: () => import('@/pages/WelcomePage.vue'),
+      },
+    ],
   },
   {
-    path: '/login',
-    name: 'login',
-    component: () => import('@/pages/auth/LoginPage.vue'),
-    meta: {
-      guestOnly: true,
-    },
-  },
-  {
-    path: '/register',
-    name: 'register',
-    component: () => import('@/pages/auth/RegisterPage.vue'),
-    meta: {
-      guestOnly: true,
-    },
-  },
-  {
-    path: '/forgot-password',
-    name: 'forgot-password',
-    component: () => import('@/pages/auth/ForgotPasswordPage.vue'),
+    path: '/auth',
+    component: () => import('@/layouts/AuthLayout.vue'),
     meta: {
       guestOnly: true,
     },
+    children: [
+      {
+        path: '/login',
+        name: 'login',
+        component: () => import('@/pages/auth/LoginPage.vue'),
+      },
+      {
+        path: '/register',
+        name: 'register',
+        component: () => import('@/pages/auth/RegisterPage.vue'),
+      },
+      {
+        path: '/forgot-password',
+        name: 'forgot-password',
+        component: () => import('@/pages/auth/ForgotPasswordPage.vue'),
+      },
+    ],
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    component: () => import('@/pages/NotFoundPage.vue'),
+    component: () => import('@/pages/error/NotFoundPage.vue'),
   },
 ]

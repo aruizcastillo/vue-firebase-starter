@@ -36,8 +36,8 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <template>
-  <main class="profile-page">
-    <h1>Perfil</h1>
+  <section class="profile-page">
+    <h1>Profile</h1>
 
     <form class="profile-form" @submit.prevent="handleSubmit">
       <div class="field">
@@ -62,7 +62,7 @@ async function handleSubmit(): Promise<void> {
         {{ validationError ?? authStore.error }}
       </p>
 
-      <p v-if="saved" class="form-success">Perfil actualizado.</p>
+      <p v-if="saved" class="form-success">Profile updated.</p>
 
       <button type="submit" :disabled="authStore.loading">
         {{ authStore.loading ? 'Saving…' : 'Save' }}
@@ -70,5 +70,5 @@ async function handleSubmit(): Promise<void> {
     </form>
 
     <RouterLink to="/"> Back to home </RouterLink>
-  </main>
+  </section>
 </template>

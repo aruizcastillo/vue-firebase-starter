@@ -25,17 +25,15 @@ async function handleSuccess(): Promise<void> {
 </script>
 
 <template>
-  <main class="auth-page">
-    <section class="auth-card">
-      <h1>Sign in</h1>
+  <section class="auth-card">
+    <h1>Sign in</h1>
 
-      <LoginForm @success="handleSuccess" />
+    <LoginForm @success="handleSuccess" />
 
-      <nav>
-        <RouterLink to="/forgot-password"> I forgot my password </RouterLink>
+    <nav>
+      <RouterLink to="/forgot-password"> I forgot my password </RouterLink>
 
-        <RouterLink to="/register"> Create an account </RouterLink>
-      </nav>
-    </section>
-  </main>
+      <RouterLink to="/register"> Create an account </RouterLink>
+    </nav>
+  </section>
 </template>

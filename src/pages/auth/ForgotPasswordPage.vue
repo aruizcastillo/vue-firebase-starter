@@ -25,29 +25,27 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <template>
-  <main class="auth-page">
-    <section class="auth-card">
-      <h1>Reset your password</h1>
+  <section class="auth-card">
+    <h1>Reset your password</h1>
 
-      <form class="auth-form" @submit.prevent="handleSubmit">
-        <div class="field">
-          <label for="reset-email"> Email address </label>
+    <form class="auth-form" @submit.prevent="handleSubmit">
+      <div class="field">
+        <label for="reset-email"> Email address </label>
 
-          <input id="reset-email" v-model="email" type="email" autocomplete="email" required />
-        </div>
+        <input id="reset-email" v-model="email" type="email" autocomplete="email" required />
+      </div>
 
-        <p v-if="authStore.error" class="form-error">
-          {{ authStore.error }}
-        </p>
+      <p v-if="authStore.error" class="form-error">
+        {{ authStore.error }}
+      </p>
 
-        <p v-if="sent" class="form-success">The password reset email has been sent.</p>
+      <p v-if="sent" class="form-success">The password reset email has been sent.</p>
 
-        <button type="submit" :disabled="authStore.loading">
-          {{ authStore.loading ? 'Sending…' : 'Send email' }}
-        </button>
-      </form>
+      <button type="submit" :disabled="authStore.loading">
+        {{ authStore.loading ? 'Sending…' : 'Send email' }}
+      </button>
+    </form>
 
-      <RouterLink to="/login"> Back to sign in </RouterLink>
-    </section>
-  </main>
+    <RouterLink to="/login"> Back to sign in </RouterLink>
+  </section>
 </template>
