@@ -41,8 +41,8 @@ async function handleSubmit(): Promise<void> {
 
       <p v-if="sent" class="form-success">The password reset email has been sent.</p>
 
-      <button type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Sending…' : 'Send email' }}
+      <button type="submit" :disabled="authStore.operationLoading">
+        {{ authStore.operationLoading ? 'Sending…' : 'Send email' }}
       </button>
     </form>
 

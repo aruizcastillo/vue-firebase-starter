@@ -2,11 +2,13 @@
 import { computed } from 'vue'
 
 import { useAuthStore } from '@/stores/auth.store'
+import { useProfileStore } from '@/stores/profile.store'
 
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 
 const userLabel = computed(() => {
-  return authStore.profile?.displayName || authStore.user?.email || 'user'
+  return profileStore.profile?.displayName || authStore.user?.email || 'user'
 })
 </script>
 

@@ -34,6 +34,9 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/auth',
     component: () => import('@/layouts/AuthLayout.vue'),
+    redirect: {
+      name: 'login',
+    },
     meta: {
       guestOnly: true,
     },

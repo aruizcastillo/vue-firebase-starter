@@ -1,20 +1,26 @@
 <script setup lang="ts">
-import { onBeforeMount, ref } from 'vue'
+import { ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth.store'
+import { useProfileStore } from '@/stores/profile.store'
 
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 
 const displayName = ref('')
 const saved = ref(false)
 const validationError = ref<string | null>(null)
 
-onBeforeMount(() => {
-  authStore.clearError()
-
-  displayName.value = authStore.profile?.displayName ?? ''
-})
+watch(
+  () => profileStore.profile?.displayName,
+  (currentDisplayName) => {
+    displayName.value = currentDisplayName ?? ''
+  },
+  {
+    immediate: true,
+  },
+)
 
 async function handleSubmit(): Promise<void> {
   saved.value = false
@@ -27,7 +33,7 @@ async function handleSubmit(): Promise<void> {
     return
   }
 
-  const succeeded = await authStore.updateProfile(normalizedDisplayName)
+  const succeeded = await profileStore.update(authStore.user, normalizedDisplayName)
 
   if (succeeded) {
     saved.value = true
@@ -43,7 +49,12 @@ async function handleSubmit(): Promise<void> {
       <div class="field">
         <label for="profile-email"> Email address </label>
 
-        <input id="profile-email" :value="authStore.profile?.email ?? ''" type="email" disabled />
+        <input
+          id="profile-email"
+          :value="profileStore.profile?.email ?? ''"
+          type="email"
+          disabled
+        />
       </div>
 
       <div class="field">
@@ -58,14 +69,17 @@ async function handleSubmit(): Promise<void> {
         />
       </div>
 
-      <p v-if="validationError || authStore.error" class="form-error">
-        {{ validationError ?? authStore.error }}
+      <p v-if="validationError || profileStore.error" class="form-error">
+        {{ validationError ?? profileStore.error }}
       </p>
 
       <p v-if="saved" class="form-success">Profile updated.</p>
 
-      <button type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Saving…' : 'Save' }}
+      <button
+        type="submit"
+        :disabled="profileStore.updating || profileStore.loading || !profileStore.profile"
+      >
+        {{ profileStore.updating ? 'Saving…' : profileStore.loading ? 'Loading profile…' : 'Save' }}
       </button>
     </form>
 

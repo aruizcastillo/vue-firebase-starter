@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useAuthStore } from '@/stores/auth.store'
+import { getPasswordPolicyMessage } from '@/utils/password-policy'
 
 const emit = defineEmits<{
   success: []
@@ -13,18 +14,27 @@ const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const validationError = ref<string | null>(null)
+const checkingPassword = computed(() => authStore.operationLoading)
+const creatingAccount = computed(() => authStore.authStatus === 'authenticating')
+const submitting = computed(() => checkingPassword.value || creatingAccount.value)
 
 async function handleSubmit(): Promise<void> {
   validationError.value = null
   authStore.clearError()
 
-  if (password.value.length < 6) {
-    validationError.value = 'The password must be at least 6 characters long.'
+  if (password.value !== confirmPassword.value) {
+    validationError.value = 'The passwords do not match.'
     return
   }
 
-  if (password.value !== confirmPassword.value) {
-    validationError.value = 'The passwords do not match.'
+  const passwordStatus = await authStore.validateRegistrationPassword(password.value)
+
+  if (!passwordStatus) {
+    return
+  }
+
+  if (!passwordStatus.isValid) {
+    validationError.value = getPasswordPolicyMessage(passwordStatus)
     return
   }
 
@@ -52,7 +62,6 @@ async function handleSubmit(): Promise<void> {
         v-model="password"
         type="password"
         autocomplete="new-password"
-        minlength="6"
         required
       />
     </div>
@@ -65,7 +74,6 @@ async function handleSubmit(): Promise<void> {
         v-model="confirmPassword"
         type="password"
         autocomplete="new-password"
-        minlength="6"
         required
       />
     </div>
@@ -74,8 +82,14 @@ async function handleSubmit(): Promise<void> {
       {{ validationError ?? authStore.error }}
     </p>
 
-    <button type="submit" :disabled="authStore.loading">
-      {{ authStore.loading ? 'Creating account…' : 'Create account' }}
+    <button type="submit" :disabled="submitting">
+      {{
+        checkingPassword
+          ? 'Checking password…'
+          : creatingAccount
+            ? 'Creating account…'
+            : 'Create account'
+      }}
     </button>
   </form>
 </template>

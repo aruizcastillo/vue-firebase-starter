@@ -3,12 +3,14 @@ import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth.store'
+import { useProfileStore } from '@/stores/profile.store'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 
 const userLabel = computed(() => {
-  return authStore.profile?.displayName || authStore.user?.email || 'User'
+  return profileStore.profile?.displayName || authStore.user?.email || 'User'
 })
 
 async function handleLogout(): Promise<void> {
@@ -30,8 +32,8 @@ async function handleLogout(): Promise<void> {
       {{ userLabel }}
     </RouterLink>
 
-    <button type="button" :disabled="authStore.loading" @click="handleLogout">
-      {{ authStore.loading ? 'Signing out...' : 'Sign out' }}
+    <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout">
+      {{ authStore.authStatus === 'signing-out' ? 'Signing out…' : 'Sign out' }}
     </button>
   </nav>
 
