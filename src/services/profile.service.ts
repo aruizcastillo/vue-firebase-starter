@@ -1,5 +1,12 @@
 import { updateProfile as updateAuthProfile, type User } from 'firebase/auth'
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import {
+  doc,
+  getDoc,
+  runTransaction,
+  serverTimestamp,
+  updateDoc,
+  type QueryDocumentSnapshot,
+} from 'firebase/firestore'
 
 import { db } from '@/firebase/firestore'
 
@@ -16,6 +23,10 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     return null
   }
 
+  return mapUserProfile(snapshot)
+}
+
+function mapUserProfile(snapshot: QueryDocumentSnapshot): UserProfile {
   const data = snapshot.data()
 
   return {
@@ -28,24 +39,39 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   }
 }
 
-export async function createUserProfile(user: User): Promise<void> {
-  await setDoc(getUserReference(user.uid), {
-    email: user.email,
-    displayName: user.displayName ?? '',
-    photoURL: user.photoURL,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
-}
-
 export async function ensureUserProfile(user: User): Promise<UserProfile> {
-  const existingProfile = await getUserProfile(user.uid)
+  const reference = getUserReference(user.uid)
 
-  if (existingProfile) {
-    return existingProfile
-  }
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(reference)
+    const authProfile = {
+      email: user.email,
+      displayName: user.displayName ?? '',
+      photoURL: user.photoURL,
+    }
 
-  await createUserProfile(user)
+    if (!snapshot.exists()) {
+      transaction.set(reference, {
+        ...authProfile,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+      return
+    }
+
+    const data = snapshot.data()
+    const identityChanged =
+      data.email !== authProfile.email ||
+      data.displayName !== authProfile.displayName ||
+      data.photoURL !== authProfile.photoURL
+
+    if (identityChanged) {
+      transaction.update(reference, {
+        ...authProfile,
+        updatedAt: serverTimestamp(),
+      })
+    }
+  })
 
   const createdProfile = await getUserProfile(user.uid)
 

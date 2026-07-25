@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount, ref } from 'vue'
+import { onBeforeMount, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth.store'
@@ -12,9 +12,17 @@ const validationError = ref<string | null>(null)
 
 onBeforeMount(() => {
   authStore.clearError()
-
-  displayName.value = authStore.profile?.displayName ?? ''
 })
+
+watch(
+  () => authStore.profile?.displayName,
+  (currentDisplayName) => {
+    displayName.value = currentDisplayName ?? ''
+  },
+  {
+    immediate: true,
+  },
+)
 
 async function handleSubmit(): Promise<void> {
   saved.value = false

@@ -6,3 +6,6 @@ export interface AuthCredentials {
 export interface RegisterCredentials extends AuthCredentials {
   confirmPassword: string
 }
+
+export type AuthStatus =
+  'idle' | 'restoring' | 'unauthenticated' | 'authenticating' | 'authenticated' | 'signing-out'

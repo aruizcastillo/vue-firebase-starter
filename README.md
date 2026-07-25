@@ -322,4 +322,23 @@ When using Google with emulators, the flow does not use a real account: the emul
 
 The profile document, its retrieval, and its synchronization with the store will be implemented in the next phase.
 
+## Quality checks
+
+Run unit tests and Firestore Security Rules tests:
+
+```bash
+pnpm test
+```
+
+The rules suite starts an isolated Firestore emulator on port `8081`, loads
+`firestore.rules`, and verifies owner access, cross-user denial, strict schema,
+field constraints, timestamps, and deletion denial.
+
+Run static validation:
+
+```bash
+pnpm type-check
+pnpm lint
+```
+
 ## Phase 3

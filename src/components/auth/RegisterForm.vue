@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 import { useAuthStore } from '@/stores/auth.store'
+import { getPasswordPolicyMessage } from '@/utils/password-policy'
 
 const emit = defineEmits<{
   success: []
@@ -18,13 +19,19 @@ async function handleSubmit(): Promise<void> {
   validationError.value = null
   authStore.clearError()
 
-  if (password.value.length < 6) {
-    validationError.value = 'The password must be at least 6 characters long.'
+  if (password.value !== confirmPassword.value) {
+    validationError.value = 'The passwords do not match.'
     return
   }
 
-  if (password.value !== confirmPassword.value) {
-    validationError.value = 'The passwords do not match.'
+  const passwordStatus = await authStore.validateRegistrationPassword(password.value)
+
+  if (!passwordStatus) {
+    return
+  }
+
+  if (!passwordStatus.isValid) {
+    validationError.value = getPasswordPolicyMessage(passwordStatus)
     return
   }
 
@@ -52,7 +59,6 @@ async function handleSubmit(): Promise<void> {
         v-model="password"
         type="password"
         autocomplete="new-password"
-        minlength="6"
         required
       />
     </div>
@@ -65,7 +71,6 @@ async function handleSubmit(): Promise<void> {
         v-model="confirmPassword"
         type="password"
         autocomplete="new-password"
-        minlength="6"
         required
       />
     </div>

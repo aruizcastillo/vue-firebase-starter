@@ -1,9 +1,10 @@
-import { computed, ref } from 'vue'
-import { defineStore } from 'pinia'
-import type { User } from 'firebase/auth'
+import { computed, markRaw, ref, shallowRef } from 'vue'
 import { FirebaseError } from 'firebase/app'
+import type { PasswordValidationStatus, User, UserCredential } from 'firebase/auth'
+import { defineStore } from 'pinia'
 
 import {
+  checkPasswordAgainstPolicy,
   loginWithEmail,
   loginWithGoogle,
   logout,
@@ -11,27 +12,47 @@ import {
   registerWithEmail,
   resetPassword,
 } from '@/services/auth.service'
-
-import { getAuthErrorMessage } from '@/utils/auth-errors'
+import { ensureUserProfile, updateUserProfile } from '@/services/profile.service'
+import type { AuthStatus } from '@/types/auth.types'
 import type { UserProfile } from '@/types/profile.types'
-import { ensureUserProfile, updateUserProfile, getUserProfile } from '@/services/profile.service'
+import { getAuthErrorMessage } from '@/utils/auth-errors'
 import { getProfileErrorMessage } from '@/utils/profile-errors'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null)
+  // Firebase User is an opaque SDK object that can retain popup/window references.
+  // Deep Vue reactivity can traverse those references and trigger cross-origin errors.
+  const user = shallowRef<User | null>(null)
   const profile = ref<UserProfile | null>(null)
+  const authStatus = ref<AuthStatus>('idle')
   const initialized = ref(false)
-  const loading = ref(false)
+  const operationLoading = ref(false)
+  const profileLoading = ref(false)
   const error = ref<string | null>(null)
+  const profileError = ref<string | null>(null)
 
   let initializationPromise: Promise<void> | null = null
+  let authStateVersion = 0
   let profileSyncPromise: Promise<UserProfile> | null = null
   let profileSyncUserId: string | null = null
 
   const isAuthenticated = computed(() => user.value !== null)
+  const authLoading = computed(() => {
+    return (
+      authStatus.value === 'restoring' ||
+      authStatus.value === 'authenticating' ||
+      authStatus.value === 'signing-out'
+    )
+  })
+  const loading = computed(() => {
+    return authLoading.value || operationLoading.value || profileLoading.value
+  })
 
   function clearError(): void {
     error.value = null
+  }
+
+  function clearProfileError(): void {
+    profileError.value = null
   }
 
   function initialize(): Promise<void> {
@@ -43,29 +64,21 @@ export const useAuthStore = defineStore('auth', () => {
       return initializationPromise
     }
 
-    initializationPromise = new Promise((resolve) => {
-      observeAuthState(async (currentUser) => {
-        const foregroundOperationInProgress = loading.value
+    authStatus.value = 'restoring'
 
-        if (!foregroundOperationInProgress) {
-          error.value = null
+    initializationPromise = new Promise((resolve) => {
+      observeAuthState((currentUser) => {
+        const stateVersion = ++authStateVersion
+
+        if (currentUser) {
+          setCurrentUser(currentUser)
+          authStatus.value = 'authenticated'
+          void synchronizeProfile(currentUser, stateVersion)
+        } else {
+          applySignedOutState()
         }
 
-        try {
-          if (currentUser) {
-            await syncAuthenticatedUser(currentUser)
-          } else {
-            user.value = null
-            profile.value = null
-          }
-        } catch (caughtError) {
-          user.value = currentUser
-          profile.value = null
-
-          if (!foregroundOperationInProgress) {
-            error.value = getProfileErrorMessage(caughtError)
-          }
-        } finally {
+        if (!initialized.value) {
           initialized.value = true
           resolve()
         }
@@ -75,65 +88,42 @@ export const useAuthStore = defineStore('auth', () => {
     return initializationPromise
   }
 
-  async function register(email: string, password: string): Promise<boolean> {
-    loading.value = true
+  function register(email: string, password: string): Promise<boolean> {
+    return authenticate(() => registerWithEmail(email, password))
+  }
+
+  function login(email: string, password: string): Promise<boolean> {
+    return authenticate(() => loginWithEmail(email, password))
+  }
+
+  function googleLogin(): Promise<boolean> {
+    return authenticate(loginWithGoogle)
+  }
+
+  async function authenticate(operation: () => Promise<UserCredential>): Promise<boolean> {
+    authStatus.value = 'authenticating'
     error.value = null
 
     try {
-      const credential = await registerWithEmail(email, password)
+      const credential = await operation()
 
-      await syncAuthenticatedUser(credential.user)
-      error.value = null
-
-      return true
-    } catch (caughtError) {
-      setOperationError(caughtError)
-      return false
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function login(email: string, password: string): Promise<boolean> {
-    loading.value = true
-    error.value = null
-
-    try {
-      const credential = await loginWithEmail(email, password)
-
-      await syncAuthenticatedUser(credential.user)
-      error.value = null
+      setCurrentUser(credential.user)
+      authStatus.value = 'authenticated'
 
       return true
     } catch (caughtError) {
-      setOperationError(caughtError)
+      setAuthError(caughtError)
+      authStatus.value = user.value ? 'authenticated' : 'unauthenticated'
+
       return false
-    } finally {
-      loading.value = false
     }
   }
 
-  async function googleLogin(): Promise<boolean> {
-    loading.value = true
-    error.value = null
-
-    try {
-      const credential = await loginWithGoogle()
-
-      await syncAuthenticatedUser(credential.user)
-      error.value = null
-
-      return true
-    } catch (caughtError) {
-      setOperationError(caughtError)
-      return false
-    } finally {
-      loading.value = false
+  async function synchronizeProfile(currentUser: User, stateVersion: number): Promise<void> {
+    if (isCurrentAuthState(currentUser, stateVersion)) {
+      profileLoading.value = true
+      profileError.value = null
     }
-  }
-
-  async function syncAuthenticatedUser(currentUser: User): Promise<void> {
-    user.value = currentUser
 
     if (!profileSyncPromise || profileSyncUserId !== currentUser.uid) {
       profileSyncUserId = currentUser.uid
@@ -145,110 +135,186 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const syncedProfile = await activeSyncPromise
 
-      if (user.value?.uid === currentUser.uid) {
+      if (isCurrentAuthState(currentUser, stateVersion)) {
         profile.value = syncedProfile
+      }
+    } catch (caughtError) {
+      if (isCurrentAuthState(currentUser, stateVersion)) {
+        profile.value = null
+        profileError.value = getProfileErrorMessage(caughtError)
       }
     } finally {
       if (profileSyncPromise === activeSyncPromise) {
         profileSyncPromise = null
         profileSyncUserId = null
       }
+
+      if (isCurrentAuthState(currentUser, stateVersion)) {
+        profileLoading.value = false
+      }
     }
   }
 
+  async function reloadProfile(): Promise<boolean> {
+    const currentUser = user.value
+
+    if (!currentUser) {
+      profileError.value = 'No authenticated user.'
+      return false
+    }
+
+    await synchronizeProfile(currentUser, authStateVersion)
+
+    return profile.value !== null
+  }
+
   async function updateProfile(displayName: string): Promise<boolean> {
-    if (!user.value) {
+    const currentUser = user.value
+
+    if (!currentUser) {
       error.value = 'No authenticated user.'
       return false
     }
 
-    loading.value = true
+    operationLoading.value = true
     error.value = null
+    profileError.value = null
 
     try {
       const normalizedDisplayName = displayName.trim()
 
-      await updateUserProfile(user.value, {
+      await updateUserProfile(currentUser, {
         displayName: normalizedDisplayName,
       })
 
-      profile.value = await getUserProfile(user.value.uid)
-
-      if (!profile.value) {
-        throw new Error('The user profile could not be loaded after updating it.')
+      if (profile.value) {
+        profile.value = {
+          ...profile.value,
+          displayName: normalizedDisplayName,
+        }
       }
+
+      void reloadProfile()
 
       return true
     } catch (caughtError) {
-      setOperationError(caughtError)
+      setProfileOperationError(caughtError)
       return false
     } finally {
-      loading.value = false
+      operationLoading.value = false
     }
   }
 
   async function signOut(): Promise<boolean> {
-    loading.value = true
+    authStatus.value = 'signing-out'
     error.value = null
 
     try {
       await logout()
-
-      user.value = null
-      profile.value = null
+      ++authStateVersion
+      applySignedOutState()
 
       return true
     } catch (caughtError) {
-      setOperationError(caughtError)
+      setAuthError(caughtError)
+      authStatus.value = user.value ? 'authenticated' : 'unauthenticated'
+
       return false
-    } finally {
-      loading.value = false
     }
   }
 
   async function sendPasswordReset(email: string): Promise<boolean> {
-    loading.value = true
+    operationLoading.value = true
     error.value = null
 
     try {
       await resetPassword(email)
       return true
     } catch (caughtError) {
-      setOperationError(caughtError)
+      if (isFirebaseErrorWithCode(caughtError, 'auth/user-not-found')) {
+        return true
+      }
+
+      setAuthError(caughtError)
       return false
     } finally {
-      loading.value = false
+      operationLoading.value = false
     }
   }
 
-  function setOperationError(caughtError: unknown): void {
-    if (!(caughtError instanceof FirebaseError)) {
-      error.value = 'An unexpected error occurred.'
+  async function validateRegistrationPassword(
+    password: string,
+  ): Promise<PasswordValidationStatus | null> {
+    operationLoading.value = true
+    error.value = null
+
+    try {
+      return await checkPasswordAgainstPolicy(password)
+    } catch (caughtError) {
+      setAuthError(caughtError)
+      return null
+    } finally {
+      operationLoading.value = false
+    }
+  }
+
+  function applySignedOutState(): void {
+    setCurrentUser(null)
+    profile.value = null
+    profileError.value = null
+    profileLoading.value = false
+    profileSyncPromise = null
+    profileSyncUserId = null
+    authStatus.value = 'unauthenticated'
+  }
+
+  function setCurrentUser(currentUser: User | null): void {
+    user.value = currentUser ? markRaw(currentUser) : null
+  }
+
+  function isCurrentAuthState(currentUser: User, stateVersion: number): boolean {
+    return authStateVersion === stateVersion && user.value?.uid === currentUser.uid
+  }
+
+  function setAuthError(caughtError: unknown): void {
+    error.value = getAuthErrorMessage(caughtError)
+  }
+
+  function setProfileOperationError(caughtError: unknown): void {
+    if (caughtError instanceof FirebaseError && caughtError.code.startsWith('auth/')) {
+      setAuthError(caughtError)
       return
     }
 
-    if (caughtError.code.startsWith('auth/')) {
-      error.value = getAuthErrorMessage(caughtError)
-      return
-    }
+    profileError.value = getProfileErrorMessage(caughtError)
+  }
 
-    error.value = getProfileErrorMessage(caughtError)
+  function isFirebaseErrorWithCode(caughtError: unknown, code: string): boolean {
+    return caughtError instanceof FirebaseError && caughtError.code === code
   }
 
   return {
     user,
     profile,
+    authStatus,
     initialized,
+    authLoading,
+    operationLoading,
+    profileLoading,
     loading,
     error,
+    profileError,
     isAuthenticated,
     clearError,
+    clearProfileError,
     initialize,
     register,
     login,
     googleLogin,
+    reloadProfile,
     signOut,
     sendPasswordReset,
     updateProfile,
+    validateRegistrationPassword,
   }
 })
