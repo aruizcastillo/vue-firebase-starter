@@ -14,6 +14,7 @@ project needs them.
 - Password reset.
 - Auth session restoration before route guards run.
 - Private `users/{uid}` profiles in Cloud Firestore.
+- Separate Pinia stores for authentication state and profile state.
 - Auth and Firestore emulators.
 - Unit tests and isolated Firestore Security Rules tests.
 
@@ -241,6 +242,10 @@ emulator popup accepts simulated provider data.
 Firebase Authentication is the source of truth for the signed-in identity.
 `onAuthStateChanged` restores the session before protected route guards decide
 where to navigate.
+
+`auth.store.ts` owns Firebase Authentication state and operations.
+`profile.store.ts` owns the Firestore profile lifecycle, loading state, retry,
+updates, and profile-specific errors.
 
 After authentication, the app creates or reconciles this private Firestore
 document:

@@ -23,6 +23,7 @@ vi.mock('@/services/auth.service', () => authMocks)
 vi.mock('@/services/profile.service', () => profileMocks)
 
 import { useAuthStore } from '@/stores/auth.store'
+import { useProfileStore } from '@/stores/profile.store'
 
 type AuthStateCallback = (user: User | null) => void
 
@@ -30,6 +31,7 @@ let authStateCallback: AuthStateCallback
 
 describe('auth store', () => {
   beforeEach(() => {
+    vi.resetAllMocks()
     setActivePinia(createPinia())
 
     authMocks.observeAuthState.mockImplementation((callback: AuthStateCallback) => {
@@ -54,6 +56,7 @@ describe('auth store', () => {
 
   it('reports authentication success independently from profile loading', async () => {
     const store = await initializeSignedOutStore()
+    const profileStore = useProfileStore()
     const user = createUser('email-user')
 
     authMocks.loginWithEmail.mockResolvedValue(createCredential(user))
@@ -64,16 +67,17 @@ describe('auth store', () => {
     authStateCallback(user)
 
     await vi.waitFor(() => {
-      expect(store.profileError).toBe('The operation could not be completed.')
+      expect(profileStore.error).toBe('The operation could not be completed.')
     })
 
     expect(store.isAuthenticated).toBe(true)
     expect(store.error).toBeNull()
-    expect(store.profile).toBeNull()
+    expect(profileStore.profile).toBeNull()
   })
 
   it('does not expose a profile synchronization failure as a Google login error', async () => {
     const store = await initializeSignedOutStore()
+    const profileStore = useProfileStore()
     const user = createUser('google-user')
 
     profileMocks.ensureUserProfile.mockRejectedValue(new Error('Temporary profile failure'))
@@ -85,12 +89,12 @@ describe('auth store', () => {
     await expect(store.googleLogin()).resolves.toBe(true)
 
     await vi.waitFor(() => {
-      expect(store.profileLoading).toBe(false)
+      expect(profileStore.loading).toBe(false)
     })
 
     expect(store.authStatus).toBe('authenticated')
     expect(store.error).toBeNull()
-    expect(store.profileError).toBe('The operation could not be completed.')
+    expect(profileStore.error).toBe('The operation could not be completed.')
   })
 
   it('keeps the Firebase user outside deep Vue reactivity', async () => {
@@ -107,6 +111,7 @@ describe('auth store', () => {
 
   it('ignores a completed profile request after signing out', async () => {
     const store = await initializeSignedOutStore()
+    const profileStore = useProfileStore()
     const user = createUser('stale-user')
     const deferredProfile = createDeferred<ReturnType<typeof createProfile>>()
 
@@ -120,7 +125,8 @@ describe('auth store', () => {
     await Promise.resolve()
 
     expect(store.isAuthenticated).toBe(false)
-    expect(store.profile).toBeNull()
+    expect(profileStore.profile).toBeNull()
+    expect(profileStore.error).toBeNull()
     expect(store.authStatus).toBe('unauthenticated')
   })
 
