@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView } from 'vue-router'
+import AppHeader from '@/components/AppHeader.vue'
 </script>
 
 <template>
   <div class="auth-layout">
-    <header class="auth-header">
-      <RouterLink class="auth-header__brand" :to="{ name: 'login' }">
-        Vue Firebase Starter
-      </RouterLink>
-    </header>
+    <AppHeader />
 
     <main class="auth-content">
       <RouterView />
