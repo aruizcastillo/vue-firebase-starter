@@ -37,3 +37,16 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Firebase
+.firebaserc
+.firebaserc.*
+!.firebaserc.example
+
+# Agents
+.agents
