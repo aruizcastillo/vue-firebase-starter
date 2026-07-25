@@ -1,95 +1,111 @@
 # Plan de puesta en producción y evolución
 
-Este documento sirve como contexto para retomar el proyecto más adelante. La
-plantilla está pensada para SPAs personales con Vue, Firebase Authentication y
-Cloud Firestore. No pretende incluir de antemano todas las capacidades de
-Firebase ni convertirse en una plataforma genérica.
+Contexto para retomar el proyecto. La plantilla está pensada para SPAs
+personales con Vue, Firebase Authentication y Cloud Firestore.
 
 ## Estado actual
 
-- La autenticación email/password y Google está implementada.
-- La sesión se restaura antes de evaluar las rutas protegidas.
-- Auth y perfil tienen stores separados: `auth.store.ts` y `profile.store.ts`.
-- El perfil privado vive en `users/{uid}`.
-- Las reglas de Firestore validan propietario, esquema, tipos, tamaños y
-  timestamps.
-- Los emuladores, pruebas unitarias y pruebas de reglas están configurados.
-- La plantilla funciona en desarrollo y el build de producción es válido.
+- Autenticación email/password y Google.
+- Restauración de sesión antes de evaluar rutas protegidas.
+- Stores separados para auth y perfil (`auth.store.ts`, `profile.store.ts`).
+- Perfil privado en `users/{uid}`.
+- Reglas de Firestore, emuladores y pruebas configurados.
+- Build de producción válido.
 
 ## Antes de publicar una aplicación derivada
 
 ### Firebase Console
 
-1. Crear o seleccionar el proyecto Firebase.
-2. Registrar la aplicación web y copiar su configuración al `.env` de
-   producción.
-3. Mantener `VITE_USE_FIREBASE_EMULATORS=false`.
-4. Activar los proveedores de Authentication que vaya a utilizar la
-   aplicación: actualmente Email/Password y Google.
-5. Añadir el dominio final en Authorized domains y comprobar la configuración
-   OAuth de Google.
-6. Revisar la política de contraseñas y los ajustes de protección de Auth.
-7. Crear Firestore en modo producción y elegir la región antes de crear la
-   base. El repositorio declara `eur3` en `firebase.json`; debe coincidir con
-   la decisión del proyecto.
+1. Crear o seleccionar el proyecto y registrar la aplicación web.
+2. Copiar la configuración al `.env` de producción y mantener
+   `VITE_USE_FIREBASE_EMULATORS=false`.
+3. Activar los proveedores necesarios (actualmente Email/Password y Google).
+4. Añadir el dominio final a Authorized domains y revisar OAuth de Google.
+5. Revisar política de contraseñas y protección de Auth.
+6. Crear Firestore en modo producción y elegir región. `firebase.json` declara
+   `eur3`; debe coincidir con la decisión del proyecto.
 
 ### Repositorio y despliegue
 
-1. Asociar el repositorio al proyecto correcto con `pnpm exec firebase use
---add`.
-2. Ejecutar `pnpm build`.
-3. Desplegar reglas e índices con `pnpm firebase:deploy:rules`.
-4. Publicar `dist` en el hosting elegido. Como es una SPA, el hosting debe
-   redirigir las rutas desconocidas a `index.html`.
-5. Verificar en el proyecto real registro, login, Google, logout, restauración
-   tras recarga, reset de contraseña, actualización de perfil y aislamiento
-   entre perfiles.
+1. Asociar el repositorio al proyecto correcto.
+2. Ejecutar `pnpm build` y desplegar reglas e índices.
+3. Publicar `dist` en un hosting con fallback SPA a `index.html`.
+4. Verificar registro, login, Google, logout, recarga, reset de contraseña,
+   perfil y aislamiento entre usuarios.
 
 Firebase Hosting no forma parte de esta plantilla; puede añadirse en un
-proyecto derivado si resulta conveniente.
+proyecto derivado.
 
 ## Decisiones deliberadas del alcance
 
-Por ahora no se incluyen:
+Por ahora no se incluyen SSR, Functions, Storage, Data Connect, App Check, CI,
+E2E ni despliegue automatizado. Tampoco se impone verificación de email,
+reauthenticación o desactivación: se documentan como evolución opcional.
+La eliminación irreversible de cuentas queda fuera del alcance; la opción
+preferida es una baja lógica.
 
-- SSR, Functions, Storage o Data Connect.
-- Verificación obligatoria de email.
-- Eliminación de cuentas y limpieza automática de perfiles.
-- App Check.
-- CI, E2E o un sistema de despliegue automatizado.
+## Evolución de identidad y cuentas
 
-Estas ausencias no impiden publicar una SPA personal. Deben revisarse si el
-proyecto derivado pasa a tener usuarios públicos, datos sensibles, abuso
-automatizado o requisitos de cumplimiento.
+### 1. Verificación de email
 
-## Próximas mejoras opcionales
+1. Tras registrar una cuenta email/password, enviar el correo con
+   `sendEmailVerification`.
+2. Exponer `emailVerified` en el store y ofrecer reenvío.
+3. Recargar el usuario (`reload`) al volver del enlace y actualizar el estado.
+4. Si el producto lo exige, proteger rutas o acciones sensibles con email
+   verificado.
+5. Probarlo en el proyecto real: el emulador de Auth no reproduce el correo de
+   producción.
 
-### App Check
+### 2. Reautenticación para operaciones sensibles
 
-App Check puede añadirse cuando una aplicación pública necesite dificultar el
-uso de Auth o Firestore desde clientes automatizados o no autorizados. Es una
-capa adicional, no un sustituto de Authentication ni de las reglas de
-Firestore. Su incorporación requiere configurar el proveedor web, los dominios
-y el comportamiento de los emuladores; por eso no se activa por defecto en la
-plantilla.
+1. Exigir sesión reciente antes de cambiar email/contraseña o desactivar la
+   cuenta; editar el perfil normal no la necesita.
+2. Email/password usa `reauthenticateWithCredential`; Google,
+   `reauthenticateWithPopup` con `GoogleAuthProvider`.
+3. Tratar `auth/requires-recent-login` como estado esperado, mostrando una
+   confirmación y reintentando la operación tras el éxito.
+4. Cubrir ambos proveedores, cancelación, credenciales incorrectas y popup
+   bloqueado.
 
-### Otros posibles pasos
+### 3. Desactivación de cuenta (baja lógica)
 
-- Añadir verificación de email, reautenticación o eliminación de cuentas si el
-  producto lo necesita.
-- Incorporar Firebase Hosting si se quiere centralizar también el despliegue.
-- Añadir CI o pruebas E2E cuando la plantilla tenga varios proyectos derivados.
-- Revisar políticas de contraseña y restricciones de acceso al crecer el
-  número de usuarios.
+La opción recomendada es una baja lógica, no borrar el UID ni eliminar la
+cuenta irreversiblemente:
+
+1. Reautenticar y pedir confirmación explícita.
+2. Anonimizar datos personales de `users/{uid}` y conservar un mínimo como
+   `status: "deactivated"` y `deactivatedAt`.
+3. Bloquear el acceso funcional con ese estado y cerrar la sesión.
+4. Ajustar `UserProfile`, servicio/store de perfil, reglas de Firestore y
+   pruebas para el nuevo esquema.
+5. Decidir qué ocurre con Firebase Auth: la SPA no puede garantizar de forma
+   atómica la limpieza y desactivación de Auth. Para bloquear también la
+   identidad se necesitaría backend/Cloud Function con Admin SDK; en una SPA
+   personal puede bastar la baja lógica y el bloqueo de la aplicación.
+
+La recuperación debe ser una decisión del producto (por ejemplo, soporte
+manual), no una capacidad implícita de la plantilla.
+
+## Otras mejoras opcionales
+
+- Añadir Firebase Hosting si se quiere centralizar el despliegue.
+- Añadir CI o pruebas E2E cuando existan varios proyectos derivados.
+- Revisar políticas de contraseña y restricciones de acceso al crecer.
 
 ## Notas para retomar el trabajo
 
-La política de contraseñas del Auth Emulator no reproduce políticas complejas
-del proyecto real: localmente se aplica el mínimo predeterminado de seis
-caracteres. Además, Auth y Firestore son servicios separados, por lo que una
-actualización de perfil no es una operación atómica entre ambos; el store de
-perfil contempla la reconciliación mediante una nueva sincronización.
-
-Antes de ampliar la plantilla conviene decidir primero si el nuevo requisito
-pertenece al núcleo común de todos los proyectos o solamente a una aplicación
+El Auth Emulator no reproduce políticas complejas de contraseña ni el flujo de
+correo de producción. Auth y Firestore son servicios separados: una
+actualización de perfil no es atómica entre ambos. Antes de ampliar la
+plantilla, decidir si el requisito pertenece al núcleo común o a una aplicación
 derivada.
+
+### Criterio adoptado para la baja
+
+La baja no impedira iniciar sesion en Firebase Auth. Al solicitarla, se
+eliminaran los datos propios del producto y se anonimizaran los datos
+personales, conservando solo un registro minimo de estado (por ejemplo,
+`status: "deactivated"` y `deactivatedAt`). Tras iniciar sesion, la aplicacion
+mostrara ese estado y decidira si permite reactivar la cuenta o empezar de
+nuevo. No se requiere Functions ni Admin SDK para este enfoque.
