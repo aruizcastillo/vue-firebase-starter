@@ -1,34 +1,30 @@
 # Vue + Firebase Starter
 
-## 1. Crear un proyecto en Firebase
+## Phase 1
 
-En Firebase Console:
+### 1. Create a Firebase project
+
+In the Firebase Console:
 
 ```text
-1. Crear proyecto.
-2. Nombre: vue-firebase-starter-dev
-3. Google Analytics: desactivado por ahora.
-4. Crear proyecto.
+1. Create a project.
+2. Name: replace-with-your-project-id
+3. Google Analytics: disabled for now.
+4. Create the project.
 ```
 
-Después, dentro del proyecto:
+Then, inside the project:
 
 ```text
-Configuración del proyecto
-→ Tus aplicaciones
-→ Añadir aplicación
+Project settings
+→ Your apps
+→ Add app
 → Web
 ```
 
-Nombre sugerido:
+Do not enable Firebase Hosting yet.
 
-```text
-vue-firebase-starter
-```
-
-No actives Firebase Hosting todavía.
-
-Firebase mostrará una configuración parecida a esta:
+Firebase will display configuration similar to this:
 
 ```ts
 const firebaseConfig = {
@@ -41,11 +37,11 @@ const firebaseConfig = {
 }
 ```
 
-Guarda los valores en variables de entorno.
+Save these values as environment variables.
 
-## 3. En `.env`
+### 2. Configure `.env`
 
-En la raíz del proyecto:
+At the project root:
 
 ```text
 vue-firebase-starter/
@@ -54,26 +50,26 @@ vue-firebase-starter/
 └── src/
 ```
 
-Contenido:
+Contents:
 
 ```env
-VITE_FIREBASE_API_KEY=tu_api_key
-VITE_FIREBASE_AUTH_DOMAIN=tu_proyecto.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=tu_project_id
-VITE_FIREBASE_STORAGE_BUCKET=tu_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
-VITE_FIREBASE_APP_ID=tu_app_id
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 
 VITE_USE_FIREBASE_EMULATORS=false
 ```
 
-Vite expone al código cliente las variables que comienzan por `VITE_` mediante `import.meta.env`. Estas variables forman parte del bundle del navegador, por lo que no deben contener secretos privados.
+Vite exposes variables beginning with `VITE_` to client-side code through `import.meta.env`. These variables are included in the browser bundle, so they must not contain private secrets.
 
-La configuración web de Firebase no es una credencial administrativa. La seguridad real dependerá de Authentication y de las reglas de Firestore.
+The Firebase web configuration is not an administrative credential. Real security depends on Authentication and Firestore Security Rules.
 
-## 5. Revisar `.gitignore`
+### 3. Check `.gitignore`
 
-Comprueba que incluya:
+Make sure it includes:
 
 ```gitignore
 .env
@@ -81,89 +77,89 @@ Comprueba que incluya:
 !.env.example
 ```
 
-## 14. Activar Authentication
+### 4. Enable Authentication
 
-En Firebase Console:
+In the Firebase Console:
 
 ```text
 Build
 → Authentication
-→ Comenzar
+→ Get started
 → Sign-in method
-→ Correo electrónico/contraseña
-→ Activar
+→ Email/Password
+→ Enable
 ```
 
-Activa únicamente:
+Enable only:
 
 ```text
-Correo electrónico/contraseña
+Email/Password
 ```
 
-No actives todavía:
+Do not enable yet:
 
 ```text
-Vínculo de correo electrónico
+Email link
 ```
 
-Google lo configuraremos más adelante.
+Google sign-in will be configured later.
 
-## 15. Crear Firestore
+### 5. Create Firestore
 
-En Firebase Console:
+In the Firebase Console:
 
 ```text
 Build
 → Firestore Database
-→ Crear base de datos
+→ Create database
 ```
 
-Selecciona:
+Select:
 
 ```text
-Producción
+Production
 ```
 
-Región recomendada para Europa:
+Recommended region for Europe:
 
 ```text
 eur3
 ```
 
-o la región disponible que prefieras.
+Or choose any available region you prefer.
 
-No uses modo de prueba como configuración permanente. Más adelante crearemos las reglas definitivas.
+Do not use test mode as a permanent configuration. The final rules will be created later.
 
-## 16. Ejecutar Firebase CLI
+### 6. Run the Firebase CLI
 
-Comprueba:
+Check the version:
 
 ```bash
 pnpm exec firebase --version
 ```
 
-Inicia sesión:
+Sign in:
 
 ```bash
 pnpm exec firebase login
 ```
 
-## 17. Inicializar Firebase CLI
+### 7. Initialize the Firebase CLI
 
-Desde la raíz del proyecto:
+From the project root:
 
 ```bash
 pnpm exec firebase init
 ```
 
-Selecciona:
+Select:
 
 ```text
 Firestore
 Emulators
 ```
 
-No selecciones:
+Do not select:
 
 ```text
 Hosting
@@ -173,15 +169,15 @@ App Hosting
 Data Connect
 ```
 
-Cuando pregunte por el proyecto:
+When asked to choose a project:
 
 ```text
 Use an existing project
 ```
 
-Selecciona el proyecto creado anteriormente.
+Select the project created earlier.
 
-Para Firestore:
+For Firestore:
 
 ```text
 Rules file:
@@ -191,7 +187,7 @@ Indexes file:
 firestore.indexes.json
 ```
 
-Para emuladores:
+For emulators:
 
 ```text
 Authentication Emulator
@@ -199,7 +195,7 @@ Firestore Emulator
 Emulator UI
 ```
 
-Puertos:
+Ports:
 
 ```text
 Authentication: 9099
@@ -207,11 +203,11 @@ Firestore:      8080
 Emulator UI:    4000
 ```
 
-Descarga los emuladores cuando la CLI lo solicite.
+Download the emulators when prompted by the CLI.
 
-## 18. Archivos generados
+### 8. Generated files
 
-La raíz debería contener:
+The project root should contain:
 
 ```text
 vue-firebase-starter/
@@ -225,7 +221,7 @@ vue-firebase-starter/
 └── src/
 ```
 
-Crear `.firebaserc`:
+Create `.firebaserc`:
 
 ```json
 {
@@ -235,15 +231,15 @@ Crear `.firebaserc`:
 }
 ```
 
-Cada repositorio derivado ejecutará:
+Each derived repository should run:
 
 ```bash
 pnpm exec firebase use --add
 ```
 
-## 19. Revisar `firebase.json`
+### 9. Check `firebase.json`
 
-Debe quedar aproximadamente así:
+It should look approximately like this:
 
 ```json
 {
@@ -267,40 +263,40 @@ Debe quedar aproximadamente así:
 }
 ```
 
-## 21. Probar los emuladores
+### 10. Test the emulators
 
-Cambia temporalmente `.env`:
+Temporarily change `.env`:
 
 ```env
 VITE_USE_FIREBASE_EMULATORS=true
 ```
 
-Arranca Firebase:
+Start Firebase:
 
 ```bash
 pnpm firebase:emulators
 ```
 
-En otra terminal:
+In another terminal:
 
 ```bash
 pnpm dev
 ```
 
-Abre:
+Open:
 
 ```text
 http://127.0.0.1:4000
 ```
 
-Deberías ver:
+You should see:
 
 ```text
 Authentication Emulator
 Firestore Emulator
 ```
 
-Después prueba también:
+Then also run:
 
 ```bash
 pnpm type-check
@@ -308,61 +304,20 @@ pnpm lint
 pnpm build
 ```
 
-## Estructura tras la fase 2
+### Definition of done
 
 ```text
-vue-firebase-starter/
-├── .env
-├── .env.example
-├── .firebaserc.example
-├── firebase.json
-├── firestore.indexes.json
-├── firestore.rules
-├── package.json
-│
-└── src/
-    ├── assets/
-    ├── components/
-    ├── composables/
-    ├── firebase/
-    │   ├── app.ts
-    │   ├── auth.ts
-    │   ├── config.ts
-    │   ├── emulators.ts
-    │   └── firestore.ts
-    ├── pages/
-    │   └── HomePage.vue
-    ├── router/
-    │   └── index.ts
-    ├── services/
-    ├── stores/
-    ├── styles/
-    │   └── main.css
-    ├── types/
-    ├── App.vue
-    ├── env.d.ts
-    └── main.ts
+Firebase SDK installed                 ✓
+Typed environment variables            ✓
+Required variables validated           ✓
+Firebase App initialized               ✓
+Authentication initialized             ✓
+Firestore initialized                  ✓
+Emulators configurable via environment ✓
+Firebase CLI installed locally         ✓
+Auth Emulator working                  ✓
+Firestore Emulator working             ✓
+Build and type-check passing           ✓
 ```
 
-## Definition of done
-
-```text
-Firebase SDK instalado                  ✓
-Variables tipadas                       ✓
-Variables obligatorias validadas        ✓
-Firebase App inicializada               ✓
-Authentication inicializado             ✓
-Firestore inicializado                  ✓
-Emuladores conectables por variable     ✓
-Firebase CLI instalada localmente       ✓
-Auth Emulator funcionando               ✓
-Firestore Emulator funcionando          ✓
-Build y type-check correctos             ✓
-```
-
-Todavía no debe existir lógica de usuarios, login, registro, documentos o stores de autenticación. Eso empieza en la fase 3.
-
-[1]: https://firebase.google.com/docs/web/setup?utm_source=chatgpt.com "Add Firebase to your JavaScript project  |  Firebase for web platforms"
-[2]: https://es.vite.dev/guide/env-and-mode?utm_source=chatgpt.com "Variables de Entorno y Modos | Vite"
-[3]: https://firebase.google.com/docs/auth/web/start?utm_source=chatgpt.com "Get Started with Firebase Authentication on Websites"
-[4]: https://firebase.google.com/docs/emulator-suite/connect_auth?utm_source=chatgpt.com "Connect your app to the Authentication Emulator  |  Firebase Local Emulator Suite"
+There should still be no user logic, login, registration, document, or authentication-store logic. That begins in the next phase.
