@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -20,14 +20,18 @@ async function handleLogout(): Promise<void> {
     <h1>Vue Firebase Starter</h1>
 
     <p>
-      Signed in as
-      {{ authStore.user?.email ?? 'user' }}.
+      Hello,
+      {{ authStore.profile?.displayName || authStore.user?.email || 'user' }}.
     </p>
+
+    <nav>
+      <RouterLink to="/profile"> Edit Profile </RouterLink>
+    </nav>
 
     <p v-if="authStore.error" class="form-error">
       {{ authStore.error }}
     </p>
 
-    <button type="button" :disabled="authStore.loading" @click="handleLogout">Sign out</button>
+    <button type="button" :disabled="authStore.loading" @click="handleLogout">Logout</button>
   </main>
 </template>
