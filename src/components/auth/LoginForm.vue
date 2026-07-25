@@ -57,11 +57,15 @@ async function handleGoogleLogin(): Promise<void> {
       {{ authStore.error }}
     </p>
 
-    <button type="submit" :disabled="authStore.loading">
-      {{ authStore.loading ? 'Logging in…' : 'Login' }}
+    <button type="submit" :disabled="authStore.authStatus === 'authenticating'">
+      {{ authStore.authStatus === 'authenticating' ? 'Logging in…' : 'Login' }}
     </button>
 
-    <button type="button" :disabled="authStore.loading" @click="handleGoogleLogin">
+    <button
+      type="button"
+      :disabled="authStore.authStatus === 'authenticating'"
+      @click="handleGoogleLogin"
+    >
       Continue with Google
     </button>
   </form>

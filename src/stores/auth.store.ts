@@ -43,16 +43,9 @@ export const useAuthStore = defineStore('auth', () => {
       authStatus.value === 'signing-out'
     )
   })
-  const loading = computed(() => {
-    return authLoading.value || operationLoading.value || profileLoading.value
-  })
 
   function clearError(): void {
     error.value = null
-  }
-
-  function clearProfileError(): void {
-    profileError.value = null
   }
 
   function initialize(): Promise<void> {
@@ -301,12 +294,10 @@ export const useAuthStore = defineStore('auth', () => {
     authLoading,
     operationLoading,
     profileLoading,
-    loading,
     error,
     profileError,
     isAuthenticated,
     clearError,
-    clearProfileError,
     initialize,
     register,
     login,

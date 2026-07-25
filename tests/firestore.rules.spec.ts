@@ -6,7 +6,17 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import {
+  Timestamp,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 const projectId = process.env.GCLOUD_PROJECT ?? 'demo-vue-firebase-starter'
@@ -38,6 +48,7 @@ describe('Firestore user profile rules', () => {
     const firestore = testEnvironment.unauthenticatedContext().firestore()
 
     await assertFails(getDoc(doc(firestore, 'users/alice')))
+    await assertFails(getDocs(collection(firestore, 'users')))
     await assertFails(setDoc(doc(firestore, 'users/alice'), validProfile()))
   })
 
@@ -56,6 +67,7 @@ describe('Firestore user profile rules', () => {
     const bobReference = doc(bobFirestore(), 'users/alice')
 
     await assertFails(getDoc(bobReference))
+    await assertFails(getDocs(collection(bobFirestore(), 'users')))
     await assertFails(
       updateDoc(bobReference, {
         displayName: 'Compromised',
@@ -82,6 +94,19 @@ describe('Firestore user profile rules', () => {
     )
   })
 
+  it('denies profiles with missing required fields', async () => {
+    const reference = doc(aliceFirestore(), 'users/alice')
+
+    await assertFails(
+      setDoc(reference, {
+        email: 'alice@example.com',
+        displayName: 'Alice',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
   it('denies oversized strings and invalid types', async () => {
     const firestore = aliceFirestore()
     const reference = doc(firestore, 'users/alice')
@@ -97,6 +122,36 @@ describe('Firestore user profile rules', () => {
       setDoc(reference, {
         ...validProfile(),
         displayName: 42,
+      }),
+    )
+  })
+
+  it('denies HTTP and oversized profile photo URLs', async () => {
+    const reference = doc(aliceFirestore(), 'users/alice')
+
+    await assertFails(
+      setDoc(reference, {
+        ...validProfile(),
+        photoURL: 'http://example.com/alice.jpg',
+      }),
+    )
+
+    await assertFails(
+      setDoc(reference, {
+        ...validProfile(),
+        photoURL: `https://example.com/${'x'.repeat(2049)}`,
+      }),
+    )
+  })
+
+  it('denies client-controlled timestamps on create', async () => {
+    const reference = doc(aliceFirestore(), 'users/alice')
+
+    await assertFails(
+      setDoc(reference, {
+        ...validProfile(),
+        createdAt: Timestamp.fromMillis(0),
+        updatedAt: Timestamp.fromMillis(0),
       }),
     )
   })
@@ -123,6 +178,39 @@ describe('Firestore user profile rules', () => {
     await assertFails(
       updateDoc(reference, {
         displayName: 'x'.repeat(81),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('denies update bypasses and schema pollution', async () => {
+    const reference = doc(aliceFirestore(), 'users/alice')
+    await setDoc(reference, validProfile())
+
+    await assertFails(
+      updateDoc(reference, {
+        role: 'admin',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+
+    await assertFails(
+      updateDoc(reference, {
+        photoURL: 'http://example.com/compromised.jpg',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+
+    await assertFails(
+      updateDoc(reference, {
+        email: 'bob@example.com',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+
+    await assertFails(
+      setDoc(reference, {
+        displayName: 'Incomplete overwrite',
         updatedAt: serverTimestamp(),
       }),
     )
@@ -157,6 +245,13 @@ describe('Firestore user profile rules', () => {
     await setDoc(reference, validProfile())
 
     await assertFails(deleteDoc(reference))
+  })
+
+  it('denies access to user subcollections', async () => {
+    const reference = doc(aliceFirestore(), 'users/alice/private/secret')
+
+    await assertFails(setDoc(reference, { value: 'private' }))
+    await assertFails(getDoc(reference))
   })
 })
 

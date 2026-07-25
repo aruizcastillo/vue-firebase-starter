@@ -30,8 +30,8 @@ async function handleLogout(): Promise<void> {
       {{ userLabel }}
     </RouterLink>
 
-    <button type="button" :disabled="authStore.loading" @click="handleLogout">
-      {{ authStore.loading ? 'Signing out...' : 'Sign out' }}
+    <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout">
+      {{ authStore.authStatus === 'signing-out' ? 'Signing out…' : 'Sign out' }}
     </button>
   </nav>
 

@@ -72,8 +72,17 @@ async function handleSubmit(): Promise<void> {
 
       <p v-if="saved" class="form-success">Profile updated.</p>
 
-      <button type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Saving…' : 'Save' }}
+      <button
+        type="submit"
+        :disabled="authStore.operationLoading || authStore.profileLoading || !authStore.profile"
+      >
+        {{
+          authStore.operationLoading
+            ? 'Saving…'
+            : authStore.profileLoading
+              ? 'Loading profile…'
+              : 'Save'
+        }}
       </button>
     </form>
 
