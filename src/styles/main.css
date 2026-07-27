@@ -104,6 +104,7 @@ input {
 .app-header__main,
 .app-header__navigation,
 .auth-navigation,
+.app-header__actions,
 .app-header__locale {
   display: flex;
   align-items: center;
@@ -114,6 +115,7 @@ input {
 }
 
 .app-header__navigation,
+.app-header__actions,
 .auth-navigation {
   gap: 1rem;
 }
