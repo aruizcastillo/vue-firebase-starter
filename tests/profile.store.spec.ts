@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const profileMocks = vi.hoisted(() => ({
   ensureUserProfile: vi.fn(),
+  setUserAccountStatus: vi.fn(),
   updateUserProfile: vi.fn(),
 }))
 
@@ -148,6 +149,19 @@ describe('profile store', () => {
     expect(store.error).toBe('Could not connect to the authentication service.')
     expect(store.updating).toBe(false)
   })
+
+  it('updates the account status without changing profile identity fields', async () => {
+    const store = useProfileStore()
+    const user = createUser('alice')
+    profileMocks.ensureUserProfile.mockResolvedValue(createProfile(user))
+    profileMocks.setUserAccountStatus.mockResolvedValue(undefined)
+
+    await store.synchronize(user)
+    await expect(store.updateStatus(user, 'deactivated')).resolves.toBe(true)
+
+    expect(profileMocks.setUserAccountStatus).toHaveBeenCalledWith('alice', 'deactivated')
+    expect(store.profile?.status).toBe('deactivated')
+  })
 })
 
 function createUser(uid: string): User {
@@ -165,6 +179,7 @@ function createProfile(user: User) {
     email: user.email,
     displayName: user.displayName ?? '',
     photoURL: user.photoURL,
+    status: 'active' as const,
     createdAt: null,
     updatedAt: null,
   }

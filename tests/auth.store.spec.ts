@@ -16,6 +16,7 @@ const authMocks = vi.hoisted(() => ({
 
 const profileMocks = vi.hoisted(() => ({
   ensureUserProfile: vi.fn(),
+  setUserAccountStatus: vi.fn(),
   updateUserProfile: vi.fn(),
 }))
 
@@ -183,6 +184,7 @@ function createProfile(user: User) {
     email: user.email,
     displayName: user.displayName ?? '',
     photoURL: user.photoURL,
+    status: 'active' as const,
     createdAt: null,
     updatedAt: null,
   }

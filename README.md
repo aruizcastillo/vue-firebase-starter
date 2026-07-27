@@ -302,6 +302,11 @@ Always verify the active project before deployment:
 pnpm exec firebase use
 ```
 
+## Phase 6: Deploy
+
+Add the environment variables to the hosting platform.
+Ensure to remove `"` or `,`.
+
 ## Quality checks
 
 Run all unit and Security Rules tests:

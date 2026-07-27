@@ -89,6 +89,13 @@ describe('Firestore user profile rules', () => {
     await assertFails(
       setDoc(doc(firestore, 'users/alice'), {
         ...validProfile(),
+        status: 'deactivated',
+      }),
+    )
+
+    await assertFails(
+      setDoc(doc(firestore, 'users/alice'), {
+        ...validProfile(),
         email: 'bob@example.com',
       }),
     )
@@ -239,6 +246,78 @@ describe('Firestore user profile rules', () => {
     )
   })
 
+  it('allows a legacy profile to be migrated to active status', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      const profile = validProfile()
+      delete profile.status
+      await setDoc(doc(context.firestore(), 'users/alice'), profile)
+    })
+
+    await assertSucceeds(
+      updateDoc(doc(aliceFirestore(), 'users/alice'), {
+        status: 'active',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('only lets a deactivated owner read status and reactivate', async () => {
+    const reference = doc(aliceFirestore(), 'users/alice')
+    await setDoc(reference, validProfile())
+
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: 'deactivated',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+
+    await assertSucceeds(getDoc(reference))
+    await assertFails(
+      updateDoc(reference, {
+        displayName: 'Blocked change',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(reference, {
+        status: 'active',
+        displayName: 'Blocked combined change',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertSucceeds(
+      updateDoc(reference, {
+        status: 'active',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('does not let a suspended owner reactivate or modify the profile', async () => {
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'users/alice'), {
+        ...validProfile(),
+        status: 'suspended',
+      })
+    })
+
+    const reference = doc(aliceFirestore(), 'users/alice')
+    await assertSucceeds(getDoc(reference))
+    await assertFails(
+      updateDoc(reference, {
+        status: 'active',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(reference, {
+        displayName: 'Blocked change',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
   it('denies profile deletion', async () => {
     const firestore = aliceFirestore()
     const reference = doc(firestore, 'users/alice')
@@ -276,6 +355,7 @@ function validProfile() {
     email: 'alice@example.com',
     displayName: 'Alice',
     photoURL: 'https://example.com/alice.jpg',
+    status: 'active',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }

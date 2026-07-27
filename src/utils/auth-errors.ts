@@ -25,6 +25,10 @@ const authErrorMessages: Record<string, string> = {
 
   'auth/account-exists-with-different-credential':
     'An account already exists with this email address using a different sign-in method.',
+
+  'auth/requires-recent-login': 'Please sign in again before changing your email address.',
+
+  'auth/credential-too-old-login-again': 'Please sign in again before changing your email address.',
 }
 
 export function getAuthErrorMessage(error: unknown): string {
