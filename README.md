@@ -90,6 +90,10 @@ Review the following Authentication settings:
   enable enforcement. A sensible baseline is at least 12 characters with
   lowercase, uppercase, numeric, and non-alphanumeric characters. The app reads
   this policy and shows its requirements during registration and password changes.
+  Tightening the policy does not normally invalidate existing passwords: those
+  users can continue signing in. Enable Firebase's **Force upgrade on sign-in**
+  option only when existing email/password users must change their password at
+  their next sign-in; test the recovery flow before enabling it in production.
 - **Email templates:** under `Authentication > Templates`, review the email
   verification template and its sender details. Firebase uses it when users
   confirm an email change. Test delivery to a real inbox before launch.
@@ -180,6 +184,10 @@ The Firebase configuration, rules, indexes, and emulators are already
 initialized in this repository. Do not run `firebase init` unless a derived
 project intentionally needs to add or reconfigure Firebase products.
 
+`VITE_FIREBASE_PROJECT_ID` selects the project used by the browser. `.firebaserc`
+selects the project targeted by Firebase CLI deployments. Check that both point
+to the intended environment before releasing.
+
 ## Phase 3 - Develop with local emulators
 
 Set this value in `.env`:
@@ -222,6 +230,9 @@ Consequently, a locally accepted password may still fail in production if the
 project requires additional complexity or a longer minimum. Test custom
 policies against the real project when they are important to a derived app.
 
+The emulators do not deliver real verification or password-reset emails. Test
+those flows against a real Firebase project and check Spam/Promotions folders.
+
 ### Manual test checklist
 
 ```text
@@ -235,8 +246,11 @@ policies against the real project when they are important to a derived app.
 7. Sign out: it should return to /welcome.
 8. Change the password for an email/password account.
 9. Request a password-reset email.
-10. Sign in through the Google emulator popup.
-11. Confirm the private users/{uid} document in the Emulator UI.
+10. Verify an email change against a real project.
+11. Deactivate an account, sign in again, and reactivate it.
+12. Suspend an account manually and confirm it cannot self-reactivate.
+13. Sign in through the Google emulator popup.
+14. Confirm the private users/{uid} document in the Emulator UI.
 ```
 
 Google login through the emulator does not use a real Google account. The
@@ -277,8 +291,9 @@ document synchronized with Firebase Authentication whenever the account is activ
 
 - **Email address:** users request a verified change from Profile. Email/password
   users confirm their current password; Google users complete a normal Google
-  reauthentication popup. Firebase sends the confirmation link to the _new_
-  address. The profile is synchronized after the link has been opened.
+  reauthentication popup. The popup is expected. Firebase sends the confirmation
+  link to the _new_ address; check Spam/Promotions if it is delayed. The profile
+  is synchronized after the link has been opened.
 - **Password:** this is available only to email/password users. It requires the
   current password and follows the Firebase password policy. Google-only users
   manage their password with Google instead.
@@ -300,6 +315,10 @@ Firestore Console and Admin SDK operations are administrative and bypass client
 Security Rules. This is intentional: a project owner can restore a suspended
 account, while the user cannot. Do not expose a client-side action that writes
 `suspended`.
+
+To suspend or restore an account manually, edit `users/{uid}.status` in the
+Firestore Console. Derived projects should replace the suspended-account message
+with a real support contact.
 
 Authentication success and profile synchronization are intentionally separate.
 If Firestore is temporarily unavailable, login still succeeds and the
@@ -353,6 +372,8 @@ Before releasing:
   intended hostnames under `Authentication > Settings > Authorized domains` in
   the Firebase Console. Enter hostnames only, without protocol, path, or port.
 - Confirm the production Firebase project is selected with `pnpm exec firebase use`.
+- Confirm that `.firebaserc` and `VITE_FIREBASE_PROJECT_ID` target the intended
+  production project.
 - Deploy the current Firestore rules and indexes with `pnpm firebase:deploy:rules`.
 - Test email/password sign-in, Google sign-in, password reset, and the verified
   email-change flow on the deployed domain.
