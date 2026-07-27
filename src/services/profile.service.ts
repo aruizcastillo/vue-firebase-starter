@@ -85,7 +85,7 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
   const createdProfile = await getUserProfile(user.uid)
 
   if (!createdProfile) {
-    throw new Error('The user profile could not be created.')
+    throw new Error('profile-creation-failed')
   }
 
   return createdProfile

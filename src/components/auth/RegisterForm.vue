@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/stores/auth.store'
 import { getPasswordPolicyMessage } from '@/utils/password-policy'
@@ -9,6 +10,7 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
@@ -36,7 +38,7 @@ async function handleSubmit(): Promise<void> {
   authStore.clearError()
 
   if (password.value !== confirmPassword.value) {
-    validationError.value = 'The passwords do not match.'
+    validationError.value = t('auth.passwordsDoNotMatch')
     return
   }
 
@@ -57,18 +59,29 @@ async function handleSubmit(): Promise<void> {
     emit('success')
   }
 }
+
+async function handleGoogleRegistration(): Promise<void> {
+  validationError.value = null
+  authStore.clearError()
+
+  const succeeded = await authStore.googleLogin()
+
+  if (succeeded) {
+    emit('success')
+  }
+}
 </script>
 
 <template>
   <form class="auth-form" @submit.prevent="handleSubmit">
     <div class="field">
-      <label for="register-email"> Email address </label>
+      <label for="register-email">{{ t('common.email') }}</label>
 
       <input id="register-email" v-model="email" type="email" autocomplete="email" required />
     </div>
 
     <div class="field">
-      <label for="register-password"> Password </label>
+      <label for="register-password">{{ t('common.password') }}</label>
 
       <input
         id="register-password"
@@ -80,7 +93,7 @@ async function handleSubmit(): Promise<void> {
     </div>
 
     <div class="field">
-      <label for="confirm-password"> Confirm password </label>
+      <label for="confirm-password">{{ t('common.confirmNewPassword') }}</label>
 
       <input
         id="confirm-password"
@@ -100,11 +113,15 @@ async function handleSubmit(): Promise<void> {
     <button type="submit" :disabled="submitting">
       {{
         checkingPassword
-          ? 'Checking password…'
+          ? t('buttons.checkingPassword')
           : creatingAccount
-            ? 'Creating account…'
-            : 'Create account'
+            ? t('buttons.creatingAccount')
+            : t('navigation.createAccount')
       }}
+    </button>
+
+    <button type="button" :disabled="submitting" @click="handleGoogleRegistration">
+      {{ t('buttons.continueWithGoogle') }}
     </button>
   </form>
 </template>

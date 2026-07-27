@@ -11,6 +11,7 @@ import {
 import type { UserAccountStatus, UserProfile } from '@/types/profile.types'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
 import { getProfileErrorMessage } from '@/utils/profile-errors'
+import { i18n } from '@/i18n'
 
 export const useProfileStore = defineStore('profile', () => {
   const profile = ref<UserProfile | null>(null)
@@ -67,7 +68,7 @@ export const useProfileStore = defineStore('profile', () => {
 
   async function reload(currentUser: User | null): Promise<boolean> {
     if (!currentUser) {
-      error.value = 'No authenticated user.'
+      error.value = i18n.global.t('errors.noAuthenticatedUser')
       return false
     }
 
@@ -76,7 +77,7 @@ export const useProfileStore = defineStore('profile', () => {
 
   async function update(currentUser: User | null, displayName: string): Promise<boolean> {
     if (!currentUser) {
-      error.value = 'No authenticated user.'
+      error.value = i18n.global.t('errors.noAuthenticatedUser')
       return false
     }
 
@@ -122,7 +123,7 @@ export const useProfileStore = defineStore('profile', () => {
     status: UserAccountStatus,
   ): Promise<boolean> {
     if (!currentUser) {
-      error.value = 'No authenticated user.'
+      error.value = i18n.global.t('errors.noAuthenticatedUser')
       return false
     }
 

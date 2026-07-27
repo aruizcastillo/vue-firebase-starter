@@ -4,8 +4,8 @@ import { RouterLink } from 'vue-router'
 
 <template>
   <main>
-    <h1>Page not found</h1>
+    <h1>{{ $t('notFound.title') }}</h1>
 
-    <RouterLink to="/"> Back to home </RouterLink>
+    <RouterLink to="/">{{ $t('navigation.backToHome') }}</RouterLink>
   </main>
 </template>

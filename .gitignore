@@ -50,3 +50,6 @@ __screenshots__/
 
 # Agents
 .agents
+
+# pnpm
+.pnpm-store

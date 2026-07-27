@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 import {
+  authServiceErrorCodes,
   changePassword,
   checkPasswordAgainstPolicy,
   reloadAuthenticatedUser,
@@ -15,6 +17,7 @@ import { getPasswordPolicyMessage } from '@/utils/password-policy'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
+const { t } = useI18n()
 
 const displayName = ref('')
 const saved = ref(false)
@@ -71,7 +74,7 @@ async function handleSubmit(): Promise<void> {
   const normalizedDisplayName = displayName.value.trim()
 
   if (normalizedDisplayName.length > 80) {
-    validationError.value = 'The name cannot exceed 80 characters.'
+    validationError.value = t('errors.nameTooLong')
     return
   }
 
@@ -89,12 +92,12 @@ async function handleEmailChange(): Promise<void> {
   const normalizedEmail = newEmail.value.trim()
 
   if (!user || !normalizedEmail) {
-    emailChangeError.value = 'Enter the new email address.'
+    emailChangeError.value = t('errors.newEmailRequired')
     return
   }
 
   if (normalizedEmail === user.email) {
-    emailChangeError.value = 'The new email address must be different.'
+    emailChangeError.value = t('errors.newEmailUnchanged')
     return
   }
 
@@ -102,14 +105,17 @@ async function handleEmailChange(): Promise<void> {
   try {
     await requestEmailChange(user, normalizedEmail, currentPassword.value)
     currentPassword.value = ''
-    emailChangeMessage.value =
-      'We sent a verification link to the new address. Your email will change after you confirm it.'
+    emailChangeMessage.value = t('profile.emailSent')
   } catch (caughtError) {
     emailChangeError.value =
       caughtError instanceof Error &&
-      (caughtError.message === 'Password confirmation is required.' ||
-        caughtError.message === 'Email changes are not available for this sign-in provider.')
-        ? caughtError.message
+      (caughtError.message === authServiceErrorCodes.passwordConfirmationRequired ||
+        caughtError.message === authServiceErrorCodes.emailChangeUnavailable)
+        ? t(
+            caughtError.message === authServiceErrorCodes.passwordConfirmationRequired
+              ? 'errors.passwordConfirmationRequired'
+              : 'errors.emailChangeUnavailable',
+          )
         : getAuthErrorMessage(caughtError)
   } finally {
     emailChangeLoading.value = false
@@ -126,7 +132,7 @@ async function refreshVerifiedEmail(): Promise<void> {
   try {
     await reloadAuthenticatedUser(user)
     await profileStore.reload(user)
-    emailChangeMessage.value = 'Your Firebase email and profile have been synchronized.'
+    emailChangeMessage.value = t('profile.emailSynchronized')
   } catch (caughtError) {
     emailChangeError.value = getAuthErrorMessage(caughtError)
   } finally {
@@ -140,17 +146,17 @@ async function handlePasswordChange(): Promise<void> {
   passwordChangeMessage.value = null
 
   if (!user || !passwordCurrent.value || !passwordNew.value) {
-    passwordChangeError.value = 'Enter your current password and a new password.'
+    passwordChangeError.value = t('errors.newPasswordRequired')
     return
   }
 
   if (passwordNew.value !== passwordConfirmation.value) {
-    passwordChangeError.value = 'The new password confirmation does not match.'
+    passwordChangeError.value = t('errors.newPasswordConfirmation')
     return
   }
 
   if (passwordCurrent.value === passwordNew.value) {
-    passwordChangeError.value = 'The new password must be different from the current password.'
+    passwordChangeError.value = t('errors.newPasswordUnchanged')
     return
   }
 
@@ -166,7 +172,7 @@ async function handlePasswordChange(): Promise<void> {
     passwordCurrent.value = ''
     passwordNew.value = ''
     passwordConfirmation.value = ''
-    passwordChangeMessage.value = 'Your password has been changed.'
+    passwordChangeMessage.value = t('profile.passwordChanged')
   } catch (caughtError) {
     passwordChangeError.value = getAuthErrorMessage(caughtError)
   } finally {
@@ -175,12 +181,7 @@ async function handlePasswordChange(): Promise<void> {
 }
 
 async function handleDeactivation(): Promise<void> {
-  if (
-    !authStore.user ||
-    !window.confirm(
-      'Deactivate your account? Your data will be preserved and you can reactivate it later.',
-    )
-  ) {
+  if (!authStore.user || !window.confirm(t('profile.deactivateConfirm'))) {
     return
   }
 
@@ -191,7 +192,7 @@ async function handleDeactivation(): Promise<void> {
   if (succeeded) {
     await authStore.signOut()
   } else {
-    deactivationError.value = profileStore.error ?? 'The account could not be deactivated.'
+    deactivationError.value = profileStore.error ?? t('errors.accountDeactivationFailed')
   }
   deactivating.value = false
 }
@@ -199,11 +200,11 @@ async function handleDeactivation(): Promise<void> {
 
 <template>
   <section class="profile-page">
-    <h1>Profile</h1>
+    <h1>{{ t('navigation.profile') }}</h1>
 
     <form class="profile-form" @submit.prevent="handleSubmit">
       <div class="field">
-        <label for="profile-email"> Email address </label>
+        <label for="profile-email">{{ t('common.email') }}</label>
 
         <input
           id="profile-email"
@@ -214,7 +215,7 @@ async function handleDeactivation(): Promise<void> {
       </div>
 
       <div class="field">
-        <label for="display-name"> Name </label>
+        <label for="display-name">{{ t('common.name') }}</label>
 
         <input
           id="display-name"
@@ -229,37 +230,41 @@ async function handleDeactivation(): Promise<void> {
         {{ validationError ?? profileStore.error }}
       </p>
 
-      <p v-if="saved" class="form-success">Profile updated.</p>
+      <p v-if="saved" class="form-success">{{ t('profile.updated') }}</p>
 
       <button
         type="submit"
         :disabled="profileStore.updating || profileStore.loading || !profileStore.profile"
       >
-        {{ profileStore.updating ? 'Saving…' : profileStore.loading ? 'Loading profile…' : 'Save' }}
+        {{
+          profileStore.updating
+            ? t('buttons.saving')
+            : profileStore.loading
+              ? t('profile.loading')
+              : t('buttons.save')
+        }}
       </button>
     </form>
 
     <section class="profile-section" aria-labelledby="change-email-heading">
-      <h2 id="change-email-heading">Change email address</h2>
-      <p>Your change must be confirmed from a verification link sent by Firebase.</p>
+      <h2 id="change-email-heading">{{ t('profile.changeEmail') }}</h2>
+      <p>{{ t('profile.emailIntro') }}</p>
       <p v-if="emailPasswordProvider" class="form-hint">
-        For security, you must re-authenticate by entering your current password before Firebase
-        sends the verification email.
+        {{ t('profile.emailPasswordHint') }}
       </p>
       <p v-else class="form-hint">
-        For security, submitting this form opens a Google window. Sign in to your Google account
-        again to re-authenticate before Firebase sends the verification email.
+        {{ t('profile.emailGoogleHint') }}
       </p>
-      <p class="form-hint">Check your spam or junk folder if the verification email is delayed.</p>
+      <p class="form-hint">{{ t('profile.spamHint') }}</p>
 
       <form class="profile-form" @submit.prevent="handleEmailChange">
         <div class="field">
-          <label for="new-email">New email address</label>
+          <label for="new-email">{{ t('profile.changeEmail') }}</label>
           <input id="new-email" v-model="newEmail" type="email" autocomplete="email" required />
         </div>
 
         <div v-if="emailPasswordProvider" class="field">
-          <label for="current-password">Current password</label>
+          <label for="current-password">{{ t('common.currentPassword') }}</label>
           <input
             id="current-password"
             v-model="currentPassword"
@@ -273,10 +278,10 @@ async function handleDeactivation(): Promise<void> {
         <p v-if="emailChangeMessage" class="form-success">{{ emailChangeMessage }}</p>
 
         <button type="submit" :disabled="emailChangeLoading">
-          {{ emailChangeLoading ? 'Requesting…' : 'Send verification link' }}
+          {{ emailChangeLoading ? t('buttons.requesting') : t('buttons.sendVerificationLink') }}
         </button>
         <button type="button" :disabled="emailChangeLoading" @click="refreshVerifiedEmail">
-          I have verified the new email
+          {{ t('buttons.verifiedEmail') }}
         </button>
       </form>
     </section>
@@ -286,17 +291,16 @@ async function handleDeactivation(): Promise<void> {
       class="profile-section"
       aria-labelledby="change-password-heading"
     >
-      <h2 id="change-password-heading">Change password</h2>
-      <p>Confirm your current password before choosing a new one.</p>
+      <h2 id="change-password-heading">{{ t('profile.changePassword') }}</h2>
+      <p>{{ t('profile.changePasswordIntro') }}</p>
       <p class="form-hint">
-        For security, entering your current password re-authenticates your account before the
-        password is changed.
+        {{ t('profile.passwordSecurityHint') }}
       </p>
       <p v-if="passwordPolicyMessage" class="form-hint">{{ passwordPolicyMessage }}</p>
 
       <form class="profile-form" @submit.prevent="handlePasswordChange">
         <div class="field">
-          <label for="password-current">Current password</label>
+          <label for="password-current">{{ t('common.currentPassword') }}</label>
           <input
             id="password-current"
             v-model="passwordCurrent"
@@ -307,7 +311,7 @@ async function handleDeactivation(): Promise<void> {
         </div>
 
         <div class="field">
-          <label for="password-new">New password</label>
+          <label for="password-new">{{ t('common.newPassword') }}</label>
           <input
             id="password-new"
             v-model="passwordNew"
@@ -318,7 +322,7 @@ async function handleDeactivation(): Promise<void> {
         </div>
 
         <div class="field">
-          <label for="password-confirmation">Confirm new password</label>
+          <label for="password-confirmation">{{ t('common.confirmNewPassword') }}</label>
           <input
             id="password-confirmation"
             v-model="passwordConfirmation"
@@ -334,7 +338,7 @@ async function handleDeactivation(): Promise<void> {
         <p v-if="passwordChangeMessage" class="form-success">{{ passwordChangeMessage }}</p>
 
         <button type="submit" :disabled="passwordChangeLoading">
-          {{ passwordChangeLoading ? 'Changing…' : 'Change password' }}
+          {{ passwordChangeLoading ? t('buttons.changing') : t('buttons.changePassword') }}
         </button>
       </form>
     </section>
@@ -343,10 +347,9 @@ async function handleDeactivation(): Promise<void> {
       class="profile-section profile-section--danger"
       aria-labelledby="deactivate-account-heading"
     >
-      <h2 id="deactivate-account-heading">Deactivate account</h2>
+      <h2 id="deactivate-account-heading">{{ t('profile.deactivate') }}</h2>
       <p>
-        Your account and data will be kept. You will be signed out and can reactivate the account
-        after signing in again.
+        {{ t('profile.deactivateIntro') }}
       </p>
       <p v-if="deactivationError" class="form-error" role="alert">{{ deactivationError }}</p>
       <button
@@ -354,10 +357,10 @@ async function handleDeactivation(): Promise<void> {
         :disabled="deactivating || profileStore.loading"
         @click="handleDeactivation"
       >
-        {{ deactivating ? 'Deactivating…' : 'Deactivate account' }}
+        {{ deactivating ? t('buttons.deactivating') : t('buttons.deactivateAccount') }}
       </button>
     </section>
 
-    <RouterLink to="/"> Back to home </RouterLink>
+    <RouterLink to="/">{{ t('navigation.backToHome') }}</RouterLink>
   </section>
 </template>
