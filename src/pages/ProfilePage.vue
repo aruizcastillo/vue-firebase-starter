@@ -242,6 +242,15 @@ async function handleDeactivation(): Promise<void> {
     <section class="profile-section" aria-labelledby="change-email-heading">
       <h2 id="change-email-heading">Change email address</h2>
       <p>Your change must be confirmed from a verification link sent by Firebase.</p>
+      <p v-if="emailPasswordProvider" class="form-hint">
+        For security, you must re-authenticate by entering your current password before Firebase
+        sends the verification email.
+      </p>
+      <p v-else class="form-hint">
+        For security, submitting this form opens a Google window. Sign in to your Google account
+        again to re-authenticate before Firebase sends the verification email.
+      </p>
+      <p class="form-hint">Check your spam or junk folder if the verification email is delayed.</p>
 
       <form class="profile-form" @submit.prevent="handleEmailChange">
         <div class="field">
@@ -279,6 +288,10 @@ async function handleDeactivation(): Promise<void> {
     >
       <h2 id="change-password-heading">Change password</h2>
       <p>Confirm your current password before choosing a new one.</p>
+      <p class="form-hint">
+        For security, entering your current password re-authenticates your account before the
+        password is changed.
+      </p>
       <p v-if="passwordPolicyMessage" class="form-hint">{{ passwordPolicyMessage }}</p>
 
       <form class="profile-form" @submit.prevent="handlePasswordChange">
