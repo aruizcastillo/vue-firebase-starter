@@ -10,11 +10,14 @@ project needs them.
 ## Included
 
 - Vue, Vue Router, and Pinia with TypeScript.
+- Vue I18n with complete English and Spanish translations for all interface text.
 - Email/password and Google authentication.
 - Account recovery, verified email changes, password changes, and account deactivation.
 - Auth session restoration before route guards run.
 - Private `users/{uid}` profiles and account status controls in Cloud Firestore.
 - Separate Pinia stores for authentication state and profile state.
+- Public, guest-only, and protected routes, including a restricted account screen.
+- Dedicated public, authentication, and application layouts.
 - Auth and Firestore emulators.
 - Unit tests and isolated Firestore Security Rules tests.
 
