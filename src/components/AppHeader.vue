@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import AuthNavigation from '@/components/AuthNavigation.vue'
+import AuthNavigation from '@/components/auth/AuthNavigation.vue'
 import { useAuthStore } from '@/stores/auth.store'
 
 const authStore = useAuthStore()
