@@ -2,7 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
-import { reloadAuthenticatedUser, requestEmailChange } from '@/services/auth.service'
+import {
+  changePassword,
+  checkPasswordAgainstPolicy,
+  reloadAuthenticatedUser,
+  requestEmailChange,
+} from '@/services/auth.service'
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
@@ -18,6 +23,12 @@ const currentPassword = ref('')
 const emailChangeMessage = ref<string | null>(null)
 const emailChangeError = ref<string | null>(null)
 const emailChangeLoading = ref(false)
+const passwordCurrent = ref('')
+const passwordNew = ref('')
+const passwordConfirmation = ref('')
+const passwordChangeError = ref<string | null>(null)
+const passwordChangeMessage = ref<string | null>(null)
+const passwordChangeLoading = ref(false)
 const deactivationError = ref<string | null>(null)
 const deactivating = ref(false)
 const emailPasswordProvider = computed(() => {
@@ -103,6 +114,46 @@ async function refreshVerifiedEmail(): Promise<void> {
     emailChangeError.value = getAuthErrorMessage(caughtError)
   } finally {
     emailChangeLoading.value = false
+  }
+}
+
+async function handlePasswordChange(): Promise<void> {
+  const user = authStore.user
+  passwordChangeError.value = null
+  passwordChangeMessage.value = null
+
+  if (!user || !passwordCurrent.value || !passwordNew.value) {
+    passwordChangeError.value = 'Enter your current password and a new password.'
+    return
+  }
+
+  if (passwordNew.value !== passwordConfirmation.value) {
+    passwordChangeError.value = 'The new password confirmation does not match.'
+    return
+  }
+
+  if (passwordCurrent.value === passwordNew.value) {
+    passwordChangeError.value = 'The new password must be different from the current password.'
+    return
+  }
+
+  passwordChangeLoading.value = true
+  try {
+    const validation = await checkPasswordAgainstPolicy(passwordNew.value)
+    if (!validation.isValid) {
+      passwordChangeError.value = 'The new password does not meet the configured password policy.'
+      return
+    }
+
+    await changePassword(user, passwordCurrent.value, passwordNew.value)
+    passwordCurrent.value = ''
+    passwordNew.value = ''
+    passwordConfirmation.value = ''
+    passwordChangeMessage.value = 'Your password has been changed.'
+  } catch (caughtError) {
+    passwordChangeError.value = getAuthErrorMessage(caughtError)
+  } finally {
+    passwordChangeLoading.value = false
   }
 }
 
@@ -200,6 +251,59 @@ async function handleDeactivation(): Promise<void> {
         </button>
         <button type="button" :disabled="emailChangeLoading" @click="refreshVerifiedEmail">
           I have verified the new email
+        </button>
+      </form>
+    </section>
+
+    <section
+      v-if="emailPasswordProvider"
+      class="profile-section"
+      aria-labelledby="change-password-heading"
+    >
+      <h2 id="change-password-heading">Change password</h2>
+      <p>Confirm your current password before choosing a new one.</p>
+
+      <form class="profile-form" @submit.prevent="handlePasswordChange">
+        <div class="field">
+          <label for="password-current">Current password</label>
+          <input
+            id="password-current"
+            v-model="passwordCurrent"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="password-new">New password</label>
+          <input
+            id="password-new"
+            v-model="passwordNew"
+            type="password"
+            autocomplete="new-password"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="password-confirmation">Confirm new password</label>
+          <input
+            id="password-confirmation"
+            v-model="passwordConfirmation"
+            type="password"
+            autocomplete="new-password"
+            required
+          />
+        </div>
+
+        <p v-if="passwordChangeError" class="form-error" role="alert">
+          {{ passwordChangeError }}
+        </p>
+        <p v-if="passwordChangeMessage" class="form-success">{{ passwordChangeMessage }}</p>
+
+        <button type="submit" :disabled="passwordChangeLoading">
+          {{ passwordChangeLoading ? 'Changing…' : 'Change password' }}
         </button>
       </form>
     </section>

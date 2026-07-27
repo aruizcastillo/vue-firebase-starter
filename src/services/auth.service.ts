@@ -9,6 +9,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updatePassword,
   verifyBeforeUpdateEmail,
   validatePassword,
   type PasswordValidationStatus,
@@ -66,6 +67,18 @@ export async function requestEmailChange(
   }
 
   await verifyBeforeUpdateEmail(user, newEmail)
+}
+
+export async function changePassword(
+  user: User,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  await reauthenticateWithCredential(
+    user,
+    EmailAuthProvider.credential(user.email ?? '', currentPassword),
+  )
+  await updatePassword(user, newPassword)
 }
 
 export async function reloadAuthenticatedUser(user: User): Promise<void> {
