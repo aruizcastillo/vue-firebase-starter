@@ -69,6 +69,10 @@ input {
   color: #166534;
 }
 
+.form-hint {
+  color: #52525b;
+}
+
 .app-layout,
 .auth-layout {
   min-height: 100dvh;

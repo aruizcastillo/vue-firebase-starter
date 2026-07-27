@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeMount, ref } from 'vue'
 
 import { useAuthStore } from '@/stores/auth.store'
 import { getPasswordPolicyMessage } from '@/utils/password-policy'
@@ -14,9 +14,22 @@ const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const validationError = ref<string | null>(null)
+const passwordPolicyMessage = ref<string | null>(null)
 const checkingPassword = computed(() => authStore.operationLoading)
 const creatingAccount = computed(() => authStore.authStatus === 'authenticating')
 const submitting = computed(() => checkingPassword.value || creatingAccount.value)
+
+onBeforeMount(() => {
+  void loadPasswordPolicy()
+})
+
+async function loadPasswordPolicy(): Promise<void> {
+  const passwordStatus = await authStore.validateRegistrationPassword('')
+
+  if (passwordStatus && !passwordStatus.isValid) {
+    passwordPolicyMessage.value = getPasswordPolicyMessage(passwordStatus)
+  }
+}
 
 async function handleSubmit(): Promise<void> {
   validationError.value = null
@@ -77,6 +90,8 @@ async function handleSubmit(): Promise<void> {
         required
       />
     </div>
+
+    <p v-if="passwordPolicyMessage" class="form-hint">{{ passwordPolicyMessage }}</p>
 
     <p v-if="validationError || authStore.error" class="form-error">
       {{ validationError ?? authStore.error }}

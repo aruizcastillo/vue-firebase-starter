@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeMount, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import {
@@ -11,6 +11,7 @@ import {
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
+import { getPasswordPolicyMessage } from '@/utils/password-policy'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -29,6 +30,7 @@ const passwordConfirmation = ref('')
 const passwordChangeError = ref<string | null>(null)
 const passwordChangeMessage = ref<string | null>(null)
 const passwordChangeLoading = ref(false)
+const passwordPolicyMessage = ref<string | null>(null)
 const deactivationError = ref<string | null>(null)
 const deactivating = ref(false)
 const emailPasswordProvider = computed(() => {
@@ -46,6 +48,21 @@ watch(
     immediate: true,
   },
 )
+
+onBeforeMount(() => {
+  if (emailPasswordProvider.value) {
+    void loadPasswordPolicy()
+  }
+})
+
+async function loadPasswordPolicy(): Promise<void> {
+  try {
+    const validation = await checkPasswordAgainstPolicy('')
+    passwordPolicyMessage.value = validation.isValid ? null : getPasswordPolicyMessage(validation)
+  } catch {
+    passwordPolicyMessage.value = null
+  }
+}
 
 async function handleSubmit(): Promise<void> {
   saved.value = false
@@ -141,7 +158,7 @@ async function handlePasswordChange(): Promise<void> {
   try {
     const validation = await checkPasswordAgainstPolicy(passwordNew.value)
     if (!validation.isValid) {
-      passwordChangeError.value = 'The new password does not meet the configured password policy.'
+      passwordChangeError.value = getPasswordPolicyMessage(validation)
       return
     }
 
@@ -262,6 +279,7 @@ async function handleDeactivation(): Promise<void> {
     >
       <h2 id="change-password-heading">Change password</h2>
       <p>Confirm your current password before choosing a new one.</p>
+      <p v-if="passwordPolicyMessage" class="form-hint">{{ passwordPolicyMessage }}</p>
 
       <form class="profile-form" @submit.prevent="handlePasswordChange">
         <div class="field">
