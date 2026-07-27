@@ -24,6 +24,11 @@ import { getEmulatorPasswordValidationStatus } from '@/utils/password-policy'
 
 const googleProvider = new GoogleAuthProvider()
 
+export const authServiceErrorCodes = {
+  passwordConfirmationRequired: 'password-confirmation-required',
+  emailChangeUnavailable: 'email-change-unavailable',
+} as const
+
 export function registerWithEmail(email: string, password: string): Promise<UserCredential> {
   return createUserWithEmailAndPassword(auth, email, password)
 }
@@ -53,7 +58,7 @@ export async function requestEmailChange(
 
   if (providers.includes('password')) {
     if (!password) {
-      throw new Error('Password confirmation is required.')
+      throw new Error(authServiceErrorCodes.passwordConfirmationRequired)
     }
 
     await reauthenticateWithCredential(
@@ -63,7 +68,7 @@ export async function requestEmailChange(
   } else if (providers.includes('google.com')) {
     await reauthenticateWithPopup(user, googleProvider)
   } else {
-    throw new Error('Email changes are not available for this sign-in provider.')
+    throw new Error(authServiceErrorCodes.emailChangeUnavailable)
   }
 
   await verifyBeforeUpdateEmail(user, newEmail)

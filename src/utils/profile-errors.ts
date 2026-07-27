@@ -1,19 +1,16 @@
 import { FirebaseError } from 'firebase/app'
+import { i18n } from '@/i18n'
 
-const profileErrorMessages: Record<string, string> = {
-  'permission-denied': 'You do not have permission to perform this operation.',
-
-  unavailable: 'The service is temporarily unavailable.',
-
-  'not-found': 'The user profile could not be found.',
-
-  'auth/network-request-failed': 'Could not connect to the service.',
+const profileErrorKeys: Record<string, string> = {
+  'permission-denied': 'errors.permissionDenied',
+  unavailable: 'errors.serviceUnavailable',
+  'not-found': 'errors.profileNotFound',
+  'auth/network-request-failed': 'errors.serviceNetwork',
 }
 
 export function getProfileErrorMessage(error: unknown): string {
-  if (!(error instanceof FirebaseError)) {
-    return 'The operation could not be completed.'
-  }
-
-  return profileErrorMessages[error.code] ?? 'The operation could not be completed.'
+  if (error instanceof Error && error.message === 'profile-creation-failed')
+    return i18n.global.t('errors.profileCreationFailed')
+  if (!(error instanceof FirebaseError)) return i18n.global.t('errors.operationFailed')
+  return i18n.global.t(profileErrorKeys[error.code] ?? 'errors.operationFailed')
 }

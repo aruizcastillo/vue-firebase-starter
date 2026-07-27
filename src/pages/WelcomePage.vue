@@ -1,10 +1,9 @@
 <template>
   <section class="welcome-page">
-    <h1>Vue Firebase Starter</h1>
+    <h1>{{ $t('app.name') }}</h1>
 
     <p>
-      A reusable Vue starter with Firebase authentication, user profiles, protected routes, and
-      local emulators.
+      {{ $t('welcome.description') }}
     </p>
   </section>
 </template>

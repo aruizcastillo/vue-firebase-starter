@@ -26,11 +26,11 @@ async function handleSubmit(): Promise<void> {
 
 <template>
   <section class="auth-card">
-    <h1>Reset your password</h1>
+    <h1>{{ $t('auth.resetPassword') }}</h1>
 
     <form class="auth-form" @submit.prevent="handleSubmit">
       <div class="field">
-        <label for="reset-email"> Email address </label>
+        <label for="reset-email">{{ $t('common.email') }}</label>
 
         <input id="reset-email" v-model="email" type="email" autocomplete="email" required />
       </div>
@@ -40,15 +40,14 @@ async function handleSubmit(): Promise<void> {
       </p>
 
       <p v-if="sent" class="form-success">
-        The password reset email has been sent. Check your spam or junk folder if it does not arrive
-        shortly.
+        {{ $t('auth.resetEmailSent') }}
       </p>
 
       <button type="submit" :disabled="authStore.operationLoading">
-        {{ authStore.operationLoading ? 'Sending…' : 'Send email' }}
+        {{ authStore.operationLoading ? $t('buttons.sending') : $t('buttons.sendEmail') }}
       </button>
     </form>
 
-    <RouterLink to="/login"> Back to sign in </RouterLink>
+    <RouterLink to="/login">{{ $t('navigation.backToSignIn') }}</RouterLink>
   </section>
 </template>

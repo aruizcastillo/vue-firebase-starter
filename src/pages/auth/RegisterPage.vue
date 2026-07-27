@@ -19,10 +19,10 @@ async function handleSuccess(): Promise<void> {
 
 <template>
   <section class="auth-card">
-    <h1>Create an account</h1>
+    <h1>{{ $t('navigation.createAccount') }}</h1>
 
     <RegisterForm @success="handleSuccess" />
 
-    <RouterLink to="/login"> I already have an account </RouterLink>
+    <RouterLink to="/login">{{ $t('navigation.alreadyHaveAccount') }}</RouterLink>
   </section>
 </template>
