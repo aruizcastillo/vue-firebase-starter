@@ -1,11 +1,15 @@
 import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  verifyBeforeUpdateEmail,
   validatePassword,
   type PasswordValidationStatus,
   type Unsubscribe,
@@ -37,6 +41,36 @@ export function logout(): Promise<void> {
 
 export function resetPassword(email: string): Promise<void> {
   return sendPasswordResetEmail(auth, email)
+}
+
+export async function requestEmailChange(
+  user: User,
+  newEmail: string,
+  password?: string,
+): Promise<void> {
+  const providers = user.providerData.map((provider) => provider.providerId)
+
+  if (providers.includes('password')) {
+    if (!password) {
+      throw new Error('Password confirmation is required.')
+    }
+
+    await reauthenticateWithCredential(
+      user,
+      EmailAuthProvider.credential(user.email ?? '', password),
+    )
+  } else if (providers.includes('google.com')) {
+    await reauthenticateWithPopup(user, googleProvider)
+  } else {
+    throw new Error('Email changes are not available for this sign-in provider.')
+  }
+
+  await verifyBeforeUpdateEmail(user, newEmail)
+}
+
+export async function reloadAuthenticatedUser(user: User): Promise<void> {
+  await user.reload()
+  await user.getIdToken(true)
 }
 
 export function checkPasswordAgainstPolicy(password: string): Promise<PasswordValidationStatus> {

@@ -3,8 +3,12 @@ import { FirebaseError } from 'firebase/app'
 import type { User } from 'firebase/auth'
 import { defineStore } from 'pinia'
 
-import { ensureUserProfile, updateUserProfile } from '@/services/profile.service'
-import type { UserProfile } from '@/types/profile.types'
+import {
+  ensureUserProfile,
+  setUserAccountStatus,
+  updateUserProfile,
+} from '@/services/profile.service'
+import type { UserAccountStatus, UserProfile } from '@/types/profile.types'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
 import { getProfileErrorMessage } from '@/utils/profile-errors'
 
@@ -113,6 +117,39 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
+  async function updateStatus(
+    currentUser: User | null,
+    status: UserAccountStatus,
+  ): Promise<boolean> {
+    if (!currentUser) {
+      error.value = 'No authenticated user.'
+      return false
+    }
+
+    const currentStateVersion = activateUser(currentUser.uid)
+    updating.value = true
+    error.value = null
+
+    try {
+      await setUserAccountStatus(currentUser.uid, status)
+
+      if (isCurrentState(currentUser.uid, currentStateVersion) && profile.value) {
+        profile.value = { ...profile.value, status }
+      }
+
+      return true
+    } catch (caughtError) {
+      if (isCurrentState(currentUser.uid, currentStateVersion)) {
+        error.value = getProfileOperationErrorMessage(caughtError)
+      }
+      return false
+    } finally {
+      if (isCurrentState(currentUser.uid, currentStateVersion)) {
+        updating.value = false
+      }
+    }
+  }
+
   function reset(): void {
     ++stateVersion
     activeUserId = null
@@ -157,6 +194,7 @@ export const useProfileStore = defineStore('profile', () => {
     synchronize,
     reload,
     update,
+    updateStatus,
     reset,
   }
 })
