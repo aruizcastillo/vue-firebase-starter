@@ -62,8 +62,8 @@ input {
 }
 
 .profile-section--danger button {
-  color: #fff;
-  background: #b91c1c;
+  color: var(--color-error-fg);
+  background: var(--color-error);
 }
 
 .auth-form {
