@@ -2,6 +2,24 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: Firebase Authentication UID
+    // Fields:
+    //   - email: string|null (required, must match the Auth token)
+    //   - displayName: string (required, 0-80 characters)
+    //   - photoURL: string|null (required, HTTPS, max 2048 characters)
+    //   - status: 'active'|'deactivated'|'suspended' (required)
+    //   - createdAt: timestamp (required, immutable)
+    //   - updatedAt: timestamp (required, server-controlled)
+    //
+    // Documents contain private identity data and are owner-readable only.
+    // Identity ownership is encoded in the document path, not in a uid field.
+    // ===============================================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,18 +29,152 @@ service cloud.firestore {
         && request.auth.uid == userId;
     }
 
+    function uidUnchanged(data) {
+      return !('uid' in data)
+        || data.uid == request.auth.uid;
+    }
+
+    function uidNotModified(data) {
+      return !('uid' in data)
+        || (
+          ('uid' in resource.data)
+          && data.uid == resource.data.uid
+        );
+    }
+
+    function hasValidUserFields(data) {
+      return data.keys().hasAll([
+          'email',
+          'displayName',
+          'photoURL',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'email',
+          'displayName',
+          'photoURL',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]);
+    }
+
+    function isValidEmail(email) {
+      return email == null
+        || (
+          email is string
+          && email.size() <= 254
+          && email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        );
+    }
+
+    function isValidDisplayName(displayName) {
+      return displayName is string
+        && displayName.size() <= 80;
+    }
+
+    function isValidPhotoURL(photoURL) {
+      return photoURL == null
+        || (
+          photoURL is string
+          && photoURL.size() <= 2048
+          && photoURL.matches('^https://.+$')
+        );
+    }
+
+    function isValidStatus(status) {
+      return status == 'active' || status == 'deactivated' || status == 'suspended';
+    }
+
+    function isValidUser(data) {
+      return hasValidUserFields(data)
+        && isValidEmail(data.email)
+        && isValidDisplayName(data.displayName)
+        && isValidPhotoURL(data.photoURL)
+        && isValidStatus(data.status)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function emailMatchesAuthToken(data) {
+      return data.email == request.auth.token.get('email', null);
+    }
+
+    function hasValidCreateTimestamps(data) {
+      return data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    function hasValidUpdateTimestamps(data) {
+      return data.createdAt == resource.data.createdAt
+        && data.updatedAt == request.time;
+    }
+
+    // Existing profiles created before the status field was introduced are
+    // migrated as part of the next normal synchronization.
+    function isLegacyUser(data) {
+      return data.keys().hasAll([
+          'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'
+        ]);
+    }
+
+    function isActiveProfile() {
+      return resource.data.status == 'active';
+    }
+
+    function onlyIdentityOrStatusChanged() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'email', 'displayName', 'photoURL', 'status', 'updatedAt'
+      ]);
+    }
+
     match /users/{userId} {
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && uidUnchanged(request.resource.data)
+        && isValidUser(request.resource.data)
+        && request.resource.data.status == 'active'
+        && emailMatchesAuthToken(request.resource.data)
+        && hasValidCreateTimestamps(request.resource.data);
+
       allow read: if isOwner(userId);
 
+      // Active users may edit profile identity fields or deactivate only their
+      // own profile. A deactivated profile can perform only the reverse
+      // status transition, allowing the recovery screen to work. A suspended
+      // profile is read-only from the client and can only be restored by an admin.
       allow update: if isOwner(userId)
-        && request.resource.data
-          .diff(resource.data)
-          .affectedKeys()
-          .hasOnly([
-            'displayName',
-            'updatedAt'
-          ]);
+        && uidNotModified(request.resource.data)
+        && isValidUser(request.resource.data)
+        && emailMatchesAuthToken(request.resource.data)
+        && hasValidUpdateTimestamps(request.resource.data)
+        && onlyIdentityOrStatusChanged()
+        && (
+          (isLegacyUser(resource.data) && request.resource.data.status == 'active')
+          || (
+            isActiveProfile()
+            && (
+              request.resource.data.status == 'active'
+              || (
+                request.resource.data.status == 'deactivated'
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                  'status', 'updatedAt'
+                ])
+              )
+            )
+          )
+          || (
+            resource.data.status == 'deactivated'
+            && request.resource.data.status == 'active'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'updatedAt'
+            ])
+          )
+        );
 
       allow delete: if false;
     }

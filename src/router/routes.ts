@@ -21,6 +21,21 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/account-deactivated',
+    component: () => import('@/layouts/AuthLayout.vue'),
+    meta: {
+      requiresAuth: true,
+      allowDeactivated: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'account-deactivated',
+        component: () => import('@/pages/AccountDeactivatedPage.vue'),
+      },
+    ],
+  },
+  {
     path: '/welcome',
     component: () => import('@/layouts/PublicLayout.vue'),
     children: [
@@ -34,6 +49,9 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/auth',
     component: () => import('@/layouts/AuthLayout.vue'),
+    redirect: {
+      name: 'login',
+    },
     meta: {
       guestOnly: true,
     },

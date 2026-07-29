@@ -26,14 +26,14 @@ async function handleSuccess(): Promise<void> {
 
 <template>
   <section class="auth-card">
-    <h1>Sign in</h1>
+    <h1>{{ $t('navigation.signIn') }}</h1>
 
     <LoginForm @success="handleSuccess" />
 
     <nav>
-      <RouterLink to="/forgot-password"> I forgot my password </RouterLink>
+      <RouterLink to="/forgot-password">{{ $t('navigation.forgotPassword') }}</RouterLink>
 
-      <RouterLink to="/register"> Create an account </RouterLink>
+      <RouterLink to="/register">{{ $t('navigation.createAccount') }}</RouterLink>
     </nav>
   </section>
 </template>
