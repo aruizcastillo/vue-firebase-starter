@@ -6,7 +6,7 @@ import router from './router'
 
 import { connectFirebaseEmulators } from './firebase/emulators'
 
-import './styles/main.css'
+import './main.css'
 
 connectFirebaseEmulators()
 
