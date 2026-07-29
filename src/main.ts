@@ -7,7 +7,7 @@ import { i18n } from './i18n'
 
 import { connectFirebaseEmulators } from './firebase/emulators'
 
-import './styles/main.css'
+import './main.css'
 
 connectFirebaseEmulators()
 
