@@ -23,7 +23,9 @@ async function handleLogout(): Promise<void> {
 
 <template>
   <nav v-if="authStore.isAuthenticated" class="auth-navigation" :aria-label="t('navigation.user')">
-    <RouterLink class="auth-navigation__user" :to="{ name: 'profile' }">{{ userLabel }}</RouterLink>
+    <RouterLink class="auth-navigation__user" :to="{ name: 'account-settings' }">{{
+      userLabel
+    }}</RouterLink>
     <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout">
       {{
         authStore.authStatus === 'signing-out'

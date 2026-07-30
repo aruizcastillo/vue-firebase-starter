@@ -18,7 +18,6 @@ async function reactivate(): Promise<void> {
   error.value = null
   reactivating.value = true
   const succeeded = await profileStore.updateStatus(authStore.user, 'active')
-
   if (succeeded) {
     await router.replace({ name: 'home' })
   } else {
@@ -35,13 +34,9 @@ async function signOut(): Promise<void> {
 
 <template>
   <section class="auth-card">
-    <h1>{{ isSuspended ? t('profile.accountSuspended') : t('profile.accountDeactivated') }}</h1>
-    <p v-if="isSuspended">
-      {{ t('profile.suspendedDescription') }}
-    </p>
-    <p v-else>
-      {{ t('profile.deactivatedDescription') }}
-    </p>
+    <h1>{{ isSuspended ? t('account.suspended') : t('account.deactivated') }}</h1>
+    <p v-if="isSuspended">{{ t('account.suspendedDescription') }}</p>
+    <p v-else>{{ t('account.deactivatedDescription') }}</p>
     <p v-if="error" class="form-error" role="alert">{{ error }}</p>
     <div class="auth-links">
       <button v-if="!isSuspended" type="button" :disabled="reactivating" @click="reactivate">
