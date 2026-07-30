@@ -3,11 +3,7 @@ import { FirebaseError } from 'firebase/app'
 import type { User } from 'firebase/auth'
 import { defineStore } from 'pinia'
 
-import {
-  ensureUserProfile,
-  setUserAccountStatus,
-  updateUserProfile,
-} from '@/services/profile.service'
+import { ensureUserProfile, setUserAccountStatus, updateUserProfile } from '@/services/profile.service'
 import type { UserAccountStatus, UserProfile } from '@/types/profile.types'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
 import { getProfileErrorMessage } from '@/utils/profile-errors'
@@ -118,10 +114,7 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  async function updateStatus(
-    currentUser: User | null,
-    status: UserAccountStatus,
-  ): Promise<boolean> {
+  async function updateStatus(currentUser: User | null, status: UserAccountStatus): Promise<boolean> {
     if (!currentUser) {
       error.value = i18n.global.t('errors.noAuthenticatedUser')
       return false

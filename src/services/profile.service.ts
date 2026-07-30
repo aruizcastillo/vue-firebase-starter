@@ -1,12 +1,5 @@
 import { updateProfile as updateAuthProfile, type User } from 'firebase/auth'
-import {
-  doc,
-  getDoc,
-  runTransaction,
-  serverTimestamp,
-  updateDoc,
-  type QueryDocumentSnapshot,
-} from 'firebase/firestore'
+import { doc, getDoc, runTransaction, serverTimestamp, updateDoc, type QueryDocumentSnapshot } from 'firebase/firestore'
 
 import { db } from '@/firebase/firestore'
 
@@ -62,18 +55,11 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
     }
 
     const data = snapshot.data()
-    const identityChanged =
-      data.email !== authProfile.email ||
-      data.displayName !== authProfile.displayName ||
-      data.photoURL !== authProfile.photoURL
+    const identityChanged = data.email !== authProfile.email || data.displayName !== authProfile.displayName || data.photoURL !== authProfile.photoURL
 
     // A deactivated or suspended account may not reconcile identity fields.
     // Do not reconcile identity fields until it is active again.
-    if (
-      data.status !== 'deactivated' &&
-      data.status !== 'suspended' &&
-      (identityChanged || data.status !== 'active')
-    ) {
+    if (data.status !== 'deactivated' && data.status !== 'suspended' && (identityChanged || data.status !== 'active')) {
       transaction.update(reference, {
         ...authProfile,
         status: 'active',
@@ -91,10 +77,7 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
   return createdProfile
 }
 
-export async function setUserAccountStatus(
-  userId: string,
-  status: UserAccountStatus,
-): Promise<void> {
+export async function setUserAccountStatus(userId: string, status: UserAccountStatus): Promise<void> {
   await updateDoc(getUserReference(userId), {
     status,
     updatedAt: serverTimestamp(),

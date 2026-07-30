@@ -2,28 +2,15 @@
 import { computed, onBeforeMount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import {
-  authServiceErrorCodes,
-  changePassword,
-  checkPasswordAgainstPolicy,
-  reloadAuthenticatedUser,
-  requestEmailChange,
-} from '@/services/auth.service'
+import { authServiceErrorCodes, changePassword, checkPasswordAgainstPolicy, reloadAuthenticatedUser, requestEmailChange } from '@/services/auth.service'
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
 import { getPasswordPolicyMessage } from '@/utils/password-policy'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -42,10 +29,7 @@ const passwordChangeLoading = ref(false)
 const passwordPolicyMessage = ref<string | null>(null)
 const deactivationError = ref<string | null>(null)
 const deactivating = ref(false)
-const emailPasswordProvider = computed(
-  () =>
-    authStore.user?.providerData.some((provider) => provider.providerId === 'password') ?? false,
-)
+const emailPasswordProvider = computed(() => authStore.user?.providerData.some((provider) => provider.providerId === 'password') ?? false)
 
 onBeforeMount(() => {
   if (emailPasswordProvider.value) void loadPasswordPolicy()
@@ -80,16 +64,7 @@ async function handleEmailChange(): Promise<void> {
     currentPassword.value = ''
     emailChangeMessage.value = t('account.emailSent')
   } catch (caughtError) {
-    emailChangeError.value =
-      caughtError instanceof Error &&
-      (caughtError.message === authServiceErrorCodes.passwordConfirmationRequired ||
-        caughtError.message === authServiceErrorCodes.emailChangeUnavailable)
-        ? t(
-            caughtError.message === authServiceErrorCodes.passwordConfirmationRequired
-              ? 'errors.passwordConfirmationRequired'
-              : 'errors.emailChangeUnavailable',
-          )
-        : getAuthErrorMessage(caughtError)
+    emailChangeError.value = caughtError instanceof Error && (caughtError.message === authServiceErrorCodes.passwordConfirmationRequired || caughtError.message === authServiceErrorCodes.emailChangeUnavailable) ? t(caughtError.message === authServiceErrorCodes.passwordConfirmationRequired ? 'errors.passwordConfirmationRequired' : 'errors.emailChangeUnavailable') : getAuthErrorMessage(caughtError)
   } finally {
     emailChangeLoading.value = false
   }
@@ -165,123 +140,87 @@ async function handleDeactivation(): Promise<void> {
 <template>
   <div class="grid gap-6">
     <Card aria-labelledby="change-email-heading">
-      <CardHeader>
-        <CardTitle id="change-email-heading">{{ t('account.changeEmail') }}</CardTitle>
+      <CardHeader class="flex flex-col items-center text-center">
+        <CardTitle id="change-email-heading" class="text-xl font-bold">{{ t('account.changeEmail') }}</CardTitle>
         <CardDescription>{{ t('account.emailIntro') }}</CardDescription>
-        <CardDescription>{{
-          emailPasswordProvider ? t('account.emailPasswordHint') : t('account.emailGoogleHint')
-        }}</CardDescription>
+        <CardDescription>
+          {{ emailPasswordProvider ? t('account.emailPasswordHint') : t('account.emailGoogleHint') }}
+        </CardDescription>
         <CardDescription>{{ t('account.spamHint') }}</CardDescription>
       </CardHeader>
       <CardContent>
         <form id="change-email-form" @submit.prevent="handleEmailChange">
-          <div class="grid gap-4">
-            <div class="grid gap-2">
-              <Label for="new-email">{{ t('account.changeEmail') }}</Label>
+          <FieldGroup class="grid w-full items-center gap-4">
+            <Field class="flex flex-col">
+              <FieldLabel for="new-email">{{ t('account.newEmail') }}</FieldLabel>
               <Input id="new-email" v-model="newEmail" type="email" autocomplete="email" required />
-            </div>
-            <div v-if="emailPasswordProvider" class="grid gap-2">
-              <Label for="current-password">{{ t('common.currentPassword') }}</Label>
-              <Input
-                id="current-password"
-                v-model="currentPassword"
-                type="password"
-                autocomplete="current-password"
-                required
-              />
-            </div>
-            <p v-if="emailChangeError" class="form-error" role="alert">{{ emailChangeError }}</p>
-            <p v-if="emailChangeMessage" class="form-success">{{ emailChangeMessage }}</p>
-          </div>
+            </Field>
+            <Field v-if="emailPasswordProvider" class="flex flex-col">
+              <FieldLabel for="current-password">{{ t('common.currentPassword') }}</FieldLabel>
+              <Input id="current-password" v-model="currentPassword" type="password" autocomplete="current-password" required />
+            </Field>
+            <FieldError v-if="emailChangeError" class="form-error">{{ emailChangeError }}</FieldError>
+            <p v-if="emailChangeMessage" class="form-success text-sm">{{ emailChangeMessage }}</p>
+          </FieldGroup>
         </form>
       </CardContent>
-      <CardFooter class="flex flex-wrap gap-2">
-        <Button form="change-email-form" type="submit" :disabled="emailChangeLoading">
+      <CardFooter class="flex flex-col gap-2">
+        <Button form="change-email-form" type="submit" class="w-full" :disabled="emailChangeLoading">
           {{ emailChangeLoading ? t('buttons.requesting') : t('buttons.sendVerificationLink') }}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          :disabled="emailChangeLoading"
-          @click="refreshVerifiedEmail"
-        >
+        <Button type="button" variant="outline" class="w-full" :disabled="emailChangeLoading" @click="refreshVerifiedEmail">
           {{ t('buttons.verifiedEmail') }}
         </Button>
       </CardFooter>
     </Card>
 
     <Card v-if="emailPasswordProvider" aria-labelledby="change-password-heading">
-      <CardHeader>
-        <CardTitle id="change-password-heading">{{ t('account.changePassword') }}</CardTitle>
+      <CardHeader class="flex flex-col items-center text-center">
+        <CardTitle id="change-password-heading" class="text-xl font-bold">{{ t('account.changePassword') }}</CardTitle>
         <CardDescription>{{ t('account.changePasswordIntro') }}</CardDescription>
         <CardDescription>{{ t('account.passwordSecurityHint') }}</CardDescription>
         <CardDescription v-if="passwordPolicyMessage">{{ passwordPolicyMessage }}</CardDescription>
       </CardHeader>
       <CardContent>
         <form id="change-password-form" @submit.prevent="handlePasswordChange">
-          <div class="grid gap-4">
-            <div class="grid gap-2">
-              <Label for="password-current">{{ t('common.currentPassword') }}</Label>
-              <Input
-                id="password-current"
-                v-model="passwordCurrent"
-                type="password"
-                autocomplete="current-password"
-                required
-              />
-            </div>
-            <div class="grid gap-2">
-              <Label for="password-new">{{ t('common.newPassword') }}</Label>
-              <Input
-                id="password-new"
-                v-model="passwordNew"
-                type="password"
-                autocomplete="new-password"
-                required
-              />
-            </div>
-            <div class="grid gap-2">
-              <Label for="password-confirmation">{{ t('common.confirmNewPassword') }}</Label>
-              <Input
-                id="password-confirmation"
-                v-model="passwordConfirmation"
-                type="password"
-                autocomplete="new-password"
-                required
-              />
-            </div>
-            <p v-if="passwordChangeError" class="form-error" role="alert">
+          <FieldGroup class="grid w-full items-center gap-4">
+            <Field class="flex flex-col">
+              <FieldLabel for="password-current">{{ t('common.currentPassword') }}</FieldLabel>
+              <Input id="password-current" v-model="passwordCurrent" type="password" autocomplete="current-password" required />
+            </Field>
+            <Field class="flex flex-col">
+              <FieldLabel for="password-new">{{ t('common.newPassword') }}</FieldLabel>
+              <Input id="password-new" v-model="passwordNew" type="password" autocomplete="new-password" required />
+            </Field>
+            <Field class="flex flex-col">
+              <FieldLabel for="password-confirmation">{{ t('common.confirmNewPassword') }}</FieldLabel>
+              <Input id="password-confirmation" v-model="passwordConfirmation" type="password" autocomplete="new-password" required />
+            </Field>
+            <FieldError v-if="passwordChangeError" class="form-error">
               {{ passwordChangeError }}
-            </p>
-            <p v-if="passwordChangeMessage" class="form-success">{{ passwordChangeMessage }}</p>
-          </div>
+            </FieldError>
+            <p v-if="passwordChangeMessage" class="form-success text-sm">{{ passwordChangeMessage }}</p>
+          </FieldGroup>
         </form>
       </CardContent>
-      <CardFooter>
-        <Button form="change-password-form" type="submit" :disabled="passwordChangeLoading">
+      <CardFooter class="flex flex-col gap-2">
+        <Button form="change-password-form" type="submit" class="w-full" :disabled="passwordChangeLoading">
           {{ passwordChangeLoading ? t('buttons.changing') : t('buttons.changePassword') }}
         </Button>
       </CardFooter>
     </Card>
 
     <Card class="border-destructive" aria-labelledby="deactivate-account-heading">
-      <CardHeader>
-        <CardTitle id="deactivate-account-heading">{{ t('account.deactivate') }}</CardTitle>
+      <CardHeader class="flex flex-col items-center text-center">
+        <CardTitle id="deactivate-account-heading" class="text-xl font-bold">{{ t('account.deactivate') }}</CardTitle>
         <CardDescription>{{ t('account.deactivateIntro') }}</CardDescription>
       </CardHeader>
-      <CardContent>
-        <p v-if="deactivationError" class="form-error" role="alert">{{ deactivationError }}</p>
-      </CardContent>
-      <CardFooter>
-        <Button
-          type="button"
-          variant="destructive"
-          :disabled="deactivating || profileStore.loading"
-          @click="handleDeactivation"
-        >
+      <CardContent class="flex flex-col gap-2">
+        <FieldError v-if="deactivationError" class="form-error">{{ deactivationError }}</FieldError>
+        <Button type="button" variant="destructive" class="w-full" :disabled="deactivating || profileStore.loading" @click="handleDeactivation">
           {{ deactivating ? t('buttons.deactivating') : t('buttons.deactivateAccount') }}
         </Button>
-      </CardFooter>
+      </CardContent>
     </Card>
   </div>
 </template>

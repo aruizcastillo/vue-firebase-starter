@@ -8,7 +8,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div data-slot="card-action" :class="cn('col-start-2 row-span-2 row-start-1 self-start justify-self-end', props.class)">
+  <fieldset data-slot="field-set" :class="cn('flex flex-col gap-6', 'has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3', props.class)">
     <slot />
-  </div>
+  </fieldset>
 </template>

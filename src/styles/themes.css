@@ -1,6 +1,12 @@
-:root,
-[data-theme='light'] {
+:root {
+  --font-base: 'Geist', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --font-title: 'Geist', sans-serif;
+  --font-size-base: 1rem;
   --radius: 0.625rem;
+}
+
+[data-theme='light'] {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

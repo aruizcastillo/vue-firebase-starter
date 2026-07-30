@@ -62,8 +62,8 @@
     "configured": "La autenticación y el perfil están configurados correctamente."
   },
   "auth": {
-    "loginDescription": "Introduce tu correo electrónico para iniciar sesión en tu cuenta.",
-    "registerDescription": "Introduce tu correo electrónico para registrarte.",
+    "loginDescription": "Introduce tu información para iniciar sesión en tu cuenta.",
+    "registerDescription": "Introduce tu información para registrarte.",
     "resetPassword": "Restablece tu contraseña",
     "resetEmailSent": "Se ha enviado el correo para restablecer la contraseña. Revisa la carpeta de spam o correo no deseado si no llega pronto.",
     "passwordsDoNotMatch": "Las contraseñas no coinciden.",
@@ -105,6 +105,7 @@
   "account": {
     "settings": "Configuración de cuenta",
     "changeEmail": "Cambiar correo electrónico",
+    "newEmail": "Nuevo correo electrónico",
     "emailIntro": "El cambio debe confirmarse desde un enlace de verificación enviado por Firebase.",
     "emailPasswordHint": "Por seguridad, debes volver a autenticarte introduciendo tu contraseña actual antes de que Firebase envíe el correo de verificación.",
     "emailGoogleHint": "Por seguridad, al enviar este formulario se abre una ventana de Google. Inicia sesión de nuevo en tu cuenta de Google para volver a autenticarte antes de que Firebase envíe el correo de verificación.",

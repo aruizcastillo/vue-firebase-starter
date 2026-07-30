@@ -105,6 +105,7 @@
   "account": {
     "settings": "Account settings",
     "changeEmail": "Change email address",
+    "newEmail": "New email address",
     "emailIntro": "Your change must be confirmed from a verification link sent by Firebase.",
     "emailPasswordHint": "For security, you must re-authenticate by entering your current password before Firebase sends the verification email.",
     "emailGoogleHint": "For security, submitting this form opens a Google window. Sign in to your Google account again to re-authenticate before Firebase sends the verification email.",

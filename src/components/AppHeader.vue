@@ -22,11 +22,7 @@ watch(locale, (value) => setLocale(value as SupportedLocale))
     <div class="app-header__main">
       <RouterLink class="app-header__brand" :to="homeLocation">{{ t('app.name') }}</RouterLink>
 
-      <nav
-        v-if="authStore.isAuthenticated"
-        class="app-header__navigation"
-        :aria-label="t('navigation.main')"
-      >
+      <nav v-if="authStore.isAuthenticated" class="app-header__navigation" :aria-label="t('navigation.main')">
         <RouterLink :to="{ name: 'home' }">{{ t('navigation.home') }}</RouterLink>
       </nav>
     </div>

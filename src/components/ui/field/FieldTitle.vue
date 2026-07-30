@@ -8,7 +8,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div data-slot="card-action" :class="cn('col-start-2 row-span-2 row-start-1 self-start justify-self-end', props.class)">
+  <div data-slot="field-label" :class="cn('flex w-fit items-center gap-2 text-sm leading-snug font-medium group-data-[disabled=true]/field:opacity-50', props.class)">
     <slot />
   </div>
 </template>

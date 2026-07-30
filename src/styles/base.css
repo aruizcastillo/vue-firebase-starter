@@ -105,3 +105,11 @@ body {
 .auth-card {
   @apply flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-8;
 }
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+  }
+}

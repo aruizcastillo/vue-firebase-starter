@@ -6,17 +6,9 @@ import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { getPasswordPolicyMessage } from '@/utils/password-policy'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 
 const emit = defineEmits<{
   success: []
@@ -87,71 +79,45 @@ async function handleGoogleRegistration(): Promise<void> {
 
 <template>
   <Card class="w-full max-w-sm">
-    <CardHeader>
-      <CardTitle>{{ t('navigation.signUp') }}</CardTitle>
-      <CardDescription>
+    <CardHeader class="flex flex-col items-center text-center">
+      <CardTitle class="text-xl font-bold">{{ t('navigation.signUp') }}</CardTitle>
+      <CardDescription class="text-muted-foreground font-">
         {{ t('auth.registerDescription') }}
       </CardDescription>
     </CardHeader>
     <CardContent>
       <form id="register-form" @submit.prevent="handleSubmit">
-        <div class="grid w-full items-center gap-4">
-          <div class="flex flex-col space-y-1.5">
-            <Label for="register-email">{{ t('common.email') }}</Label>
+        <FieldGroup class="grid w-full items-center gap-4">
+          <Field class="flex flex-col">
+            <FieldLabel for="register-email">{{ t('common.email') }}</FieldLabel>
             <Input id="register-email" v-model="email" type="email" autocomplete="email" required />
-          </div>
-          <div class="flex flex-col space-y-1.5">
-            <Label for="register-password">{{ t('common.password') }}</Label>
-            <Input
-              id="register-password"
-              v-model="password"
-              type="password"
-              autocomplete="new-password"
-              required
-            />
-          </div>
-          <div class="flex flex-col space-y-1.5">
-            <Label for="confirm-password">{{ t('common.confirmNewPassword') }}</Label>
-            <Input
-              id="confirm-password"
-              v-model="confirmPassword"
-              type="password"
-              autocomplete="new-password"
-              required
-            />
-          </div>
-          <CardDescription v-if="validationError || authStore.error" class="form-hint">
+          </Field>
+          <Field class="flex flex-col">
+            <FieldLabel for="register-password">{{ t('common.password') }}</FieldLabel>
+            <Input id="register-password" v-model="password" type="password" autocomplete="new-password" required />
+          </Field>
+          <Field class="flex flex-col">
+            <FieldLabel for="confirm-password">{{ t('common.confirmNewPassword') }}</FieldLabel>
+            <Input id="confirm-password" v-model="confirmPassword" type="password" autocomplete="new-password" required />
+          </Field>
+          <FieldError v-if="validationError || authStore.error" class="form-hint">
             {{ passwordPolicyMessage }}
-          </CardDescription>
-          <CardDescription v-if="validationError || authStore.error" class="form-error" role="alert">
+          </FieldError>
+          <FieldError v-if="validationError || authStore.error" class="form-error" role="alert">
             {{ validationError ?? authStore.error }}
-          </CardDescription>
-        </div>
+          </FieldError>
+        </FieldGroup>
       </form>
     </CardContent>
     <CardFooter class="flex flex-col gap-2">
       <Button form="register-form" type="submit" class="w-full" :disabled="submitting">
-        {{
-          checkingPassword
-            ? t('buttons.checkingPassword')
-            : creatingAccount
-              ? t('buttons.creatingAccount')
-              : t('navigation.signUp')
-        }}
+        {{ checkingPassword ? t('buttons.checkingPassword') : creatingAccount ? t('buttons.creatingAccount') : t('navigation.createAccount') }}
       </Button>
-      <Button
-        type="button"
-        variant="outline"
-        class="w-full"
-        :disabled="submitting"
-        @click="handleGoogleRegistration"
-      >
+      <Button type="button" variant="outline" class="w-full" :disabled="submitting" @click="handleGoogleRegistration">
         {{ t('buttons.continueWithGoogle') }}
       </Button>
-      <CardAction>
-        <Button variant="link" as-child class="text-muted-foreground">
-          <RouterLink to="/login">{{ $t('navigation.alreadyHaveAccount') }}</RouterLink>
-        </Button>
+      <CardAction class="pt-2 self-end">
+        <RouterLink to="/login" class="link-muted text-sm">{{ $t('navigation.alreadyHaveAccount') }}</RouterLink>
       </CardAction>
     </CardFooter>
   </Card>

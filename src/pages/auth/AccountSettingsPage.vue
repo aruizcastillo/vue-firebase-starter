@@ -9,10 +9,13 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <section class="account-settings-page">
-    <h1>{{ t('account.settings') }}</h1>
+  <section class="flex flex-col gap-4">
+    <div class="flex flex-row items-center justify-between">
+      <h1 class="text-xl font-bold">{{ t('account.settings') }}</h1>
+        <RouterLink to="/" class="link-muted text-sm">{{ t('navigation.backToHome') }}</RouterLink>
+    </div>
+
     <ProfileSettings />
     <AccountSettings />
-    <RouterLink to="/">{{ t('navigation.backToHome') }}</RouterLink>
   </section>
 </template>

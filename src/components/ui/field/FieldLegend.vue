@@ -4,11 +4,12 @@ import { cn } from '@/lib/utils'
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
+  variant?: 'legend' | 'label'
 }>()
 </script>
 
 <template>
-  <div data-slot="card-action" :class="cn('col-start-2 row-span-2 row-start-1 self-start justify-self-end', props.class)">
+  <legend data-slot="field-legend" :data-variant="variant" :class="cn('mb-3 font-medium', 'data-[variant=legend]:text-base', 'data-[variant=label]:text-sm', props.class)">
     <slot />
-  </div>
+  </legend>
 </template>

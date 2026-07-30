@@ -20,22 +20,12 @@ export function getEmulatorPasswordValidationStatus(password: string): PasswordV
 export function getPasswordPolicyMessage(status: PasswordValidationStatus): string {
   const requirements: string[] = []
   const options = status.passwordPolicy.customStrengthOptions
-  if (status.meetsMinPasswordLength === false)
-    requirements.push(
-      i18n.global.t('auth.passwordPolicy.minimum', { count: options.minPasswordLength ?? 6 }),
-    )
-  if (status.meetsMaxPasswordLength === false && options.maxPasswordLength)
-    requirements.push(
-      i18n.global.t('auth.passwordPolicy.maximum', { count: options.maxPasswordLength }),
-    )
-  if (status.containsLowercaseLetter === false)
-    requirements.push(i18n.global.t('auth.passwordPolicy.lowercase'))
-  if (status.containsUppercaseLetter === false)
-    requirements.push(i18n.global.t('auth.passwordPolicy.uppercase'))
-  if (status.containsNumericCharacter === false)
-    requirements.push(i18n.global.t('auth.passwordPolicy.number'))
-  if (status.containsNonAlphanumericCharacter === false)
-    requirements.push(i18n.global.t('auth.passwordPolicy.symbol'))
+  if (status.meetsMinPasswordLength === false) requirements.push(i18n.global.t('auth.passwordPolicy.minimum', { count: options.minPasswordLength ?? 6 }))
+  if (status.meetsMaxPasswordLength === false && options.maxPasswordLength) requirements.push(i18n.global.t('auth.passwordPolicy.maximum', { count: options.maxPasswordLength }))
+  if (status.containsLowercaseLetter === false) requirements.push(i18n.global.t('auth.passwordPolicy.lowercase'))
+  if (status.containsUppercaseLetter === false) requirements.push(i18n.global.t('auth.passwordPolicy.uppercase'))
+  if (status.containsNumericCharacter === false) requirements.push(i18n.global.t('auth.passwordPolicy.number'))
+  if (status.containsNonAlphanumericCharacter === false) requirements.push(i18n.global.t('auth.passwordPolicy.symbol'))
   if (requirements.length === 0) return i18n.global.t('auth.passwordPolicy.invalid')
   return i18n.global.t('auth.passwordPolicy.mustContain', {
     requirements: formatRequirements(requirements),

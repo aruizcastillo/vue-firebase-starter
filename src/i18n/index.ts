@@ -22,9 +22,7 @@ function getInitialLocale(): SupportedLocale {
 
   const browserLocale = navigator.language.split('-')[0]
 
-  return supportedLocales.includes(browserLocale as SupportedLocale)
-    ? (browserLocale as SupportedLocale)
-    : DEFAULT_LOCALE
+  return supportedLocales.includes(browserLocale as SupportedLocale) ? (browserLocale as SupportedLocale) : DEFAULT_LOCALE
 }
 
 export const i18n = createI18n({

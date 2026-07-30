@@ -5,6 +5,9 @@ import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { FieldError } from '@/components/ui/field'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -34,17 +37,20 @@ async function signOut(): Promise<void> {
 
 <template>
   <section class="auth-card">
-    <h1>{{ isSuspended ? t('account.suspended') : t('account.deactivated') }}</h1>
-    <p v-if="isSuspended">{{ t('account.suspendedDescription') }}</p>
-    <p v-else>{{ t('account.deactivatedDescription') }}</p>
-    <p v-if="error" class="form-error" role="alert">{{ error }}</p>
-    <div class="auth-links">
-      <button v-if="!isSuspended" type="button" :disabled="reactivating" @click="reactivate">
-        {{ reactivating ? t('buttons.reactivating') : t('buttons.reactivateAccount') }}
-      </button>
-      <button type="button" :disabled="reactivating" @click="signOut">
-        {{ t('navigation.signOut') }}
-      </button>
-    </div>
+    <Card class="w-full max-w-sm">
+      <CardHeader class="flex flex-col items-center text-center">
+        <CardTitle class="text-xl font-bold">{{ isSuspended ? t('account.suspended') : t('account.deactivated') }}</CardTitle>
+        <CardDescription>{{ isSuspended ? t('account.suspendedDescription') : t('account.deactivatedDescription') }}</CardDescription>
+      </CardHeader>
+      <CardContent class="flex flex-col gap-2">
+        <FieldError v-if="error" class="form-error">{{ error }}</FieldError>
+        <Button v-if="!isSuspended" type="button" class="w-full" :disabled="reactivating" @click="reactivate">
+          {{ reactivating ? t('buttons.reactivating') : t('buttons.reactivateAccount') }}
+        </Button>
+        <Button type="button" variant="outline" class="w-full" :disabled="reactivating" @click="signOut">
+          {{ t('navigation.signOut') }}
+        </Button>
+      </CardContent>
+    </Card>
   </section>
 </template>

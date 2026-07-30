@@ -7,7 +7,7 @@ import { useProfileStore } from '@/stores/profile.store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -42,51 +42,30 @@ async function handleSubmit(): Promise<void> {
 
 <template>
   <Card aria-labelledby="profile-settings-heading">
-    <CardHeader>
-      <CardTitle id="profile-settings-heading">{{ t('profile.settings') }}</CardTitle>
+    <CardHeader class="flex flex-col items-center text-center">
+      <CardTitle id="profile-settings-heading" class="text-xl font-bold">{{ t('profile.settings') }}</CardTitle>
     </CardHeader>
     <CardContent>
       <form id="profile-settings-form" @submit.prevent="handleSubmit">
-        <div class="grid gap-4">
-          <div class="grid gap-2">
-            <Label for="profile-email">{{ t('common.email') }}</Label>
-            <Input
-              id="profile-email"
-              :model-value="profileStore.profile?.email ?? ''"
-              type="email"
-              disabled
-            />
-          </div>
-          <div class="grid gap-2">
-            <Label for="display-name">{{ t('common.name') }}</Label>
-            <Input
-              id="display-name"
-              v-model="displayName"
-              type="text"
-              autocomplete="name"
-              maxlength="80"
-            />
-          </div>
-          <p v-if="validationError || profileStore.error" class="form-error" role="alert">
+        <FieldGroup class="grid w-full items-center gap-4">
+          <Field class="flex flex-col">
+            <FieldLabel for="profile-email">{{ t('common.email') }}</FieldLabel>
+            <Input id="profile-email" :model-value="profileStore.profile?.email ?? ''" type="email" disabled />
+          </Field>
+          <Field class="flex flex-col">
+            <FieldLabel for="display-name">{{ t('common.name') }}</FieldLabel>
+            <Input id="display-name" v-model="displayName" type="text" autocomplete="name" maxlength="80" />
+          </Field>
+          <FieldError v-if="validationError || profileStore.error" class="form-error">
             {{ validationError ?? profileStore.error }}
-          </p>
-          <p v-if="saved" class="form-success">{{ t('profile.updated') }}</p>
-        </div>
+          </FieldError>
+          <p v-if="saved" class="form-success text-sm">{{ t('profile.updated') }}</p>
+        </FieldGroup>
       </form>
     </CardContent>
-    <CardFooter>
-      <Button
-        form="profile-settings-form"
-        type="submit"
-        :disabled="profileStore.updating || profileStore.loading || !profileStore.profile"
-      >
-        {{
-          profileStore.updating
-            ? t('buttons.saving')
-            : profileStore.loading
-              ? t('profile.loading')
-              : t('buttons.save')
-        }}
+    <CardFooter class="flex flex-col gap-2">
+      <Button form="profile-settings-form" type="submit" class="w-full" :disabled="profileStore.updating || profileStore.loading || !profileStore.profile">
+        {{ profileStore.updating ? t('buttons.saving') : profileStore.loading ? t('profile.loading') : t('buttons.save') }}
       </Button>
     </CardFooter>
   </Card>
