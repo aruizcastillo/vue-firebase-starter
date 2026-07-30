@@ -50,18 +50,18 @@ input {
 .field,
 .auth-card nav,
 .auth-links,
-.profile-form {
+.settings-form {
   display: grid;
   gap: 0.75rem;
 }
 
-.profile-section {
+.settings-section {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid #e4e4e7;
 }
 
-.profile-section--danger button {
+.settings-section--danger button {
   color: var(--color-error-fg);
   background: var(--color-error);
 }
