@@ -4,6 +4,10 @@ import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -37,33 +41,42 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <template>
-  <section class="settings-section" aria-labelledby="profile-settings-heading">
-    <h2 id="profile-settings-heading">{{ t('profile.settings') }}</h2>
-    <form class="settings-form" @submit.prevent="handleSubmit">
-      <div class="field">
-        <label for="profile-email">{{ t('common.email') }}</label>
-        <input
-          id="profile-email"
-          :value="profileStore.profile?.email ?? ''"
-          type="email"
-          disabled
-        />
-      </div>
-      <div class="field">
-        <label for="display-name">{{ t('common.name') }}</label>
-        <input
-          id="display-name"
-          v-model="displayName"
-          type="text"
-          autocomplete="name"
-          maxlength="80"
-        />
-      </div>
-      <p v-if="validationError || profileStore.error" class="form-error">
-        {{ validationError ?? profileStore.error }}
-      </p>
-      <p v-if="saved" class="form-success">{{ t('profile.updated') }}</p>
-      <button
+  <Card aria-labelledby="profile-settings-heading">
+    <CardHeader>
+      <CardTitle id="profile-settings-heading">{{ t('profile.settings') }}</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <form id="profile-settings-form" @submit.prevent="handleSubmit">
+        <div class="grid gap-4">
+          <div class="grid gap-2">
+            <Label for="profile-email">{{ t('common.email') }}</Label>
+            <Input
+              id="profile-email"
+              :model-value="profileStore.profile?.email ?? ''"
+              type="email"
+              disabled
+            />
+          </div>
+          <div class="grid gap-2">
+            <Label for="display-name">{{ t('common.name') }}</Label>
+            <Input
+              id="display-name"
+              v-model="displayName"
+              type="text"
+              autocomplete="name"
+              maxlength="80"
+            />
+          </div>
+          <p v-if="validationError || profileStore.error" class="form-error" role="alert">
+            {{ validationError ?? profileStore.error }}
+          </p>
+          <p v-if="saved" class="form-success">{{ t('profile.updated') }}</p>
+        </div>
+      </form>
+    </CardContent>
+    <CardFooter>
+      <Button
+        form="profile-settings-form"
         type="submit"
         :disabled="profileStore.updating || profileStore.loading || !profileStore.profile"
       >
@@ -74,7 +87,7 @@ async function handleSubmit(): Promise<void> {
               ? t('profile.loading')
               : t('buttons.save')
         }}
-      </button>
-    </form>
-  </section>
+      </Button>
+    </CardFooter>
+  </Card>
 </template>

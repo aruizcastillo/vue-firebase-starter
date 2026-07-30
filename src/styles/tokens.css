@@ -1,67 +1,13 @@
 :root {
-  /* Typography */
-  --font-base: "Inter", sans-serif;
-  --font-heading: "Inter", sans-serif;
-  --font-mono: "Fira Code", monospace;
-  --font-size-base: 1rem;
-}
+  --color-success: #166534;
+  --color-success-fg: #ffffff;
 
-[data-theme="light"] {
-  /* Application */
-  --color-bg: #ffffff;
-  --color-fg: #18181b;
+  --color-warning: #facc15;
+  --color-warning-fg: #000000;
 
-  /* Surfaces */
-  --color-surface: #ffffff;
-  --color-surface-fg: #18181b;
-  --color-surface-muted: #f4f4f5;
+  --color-error: #b91c1c;
+  --color-error-fg: #ffffff;
 
-  /* Structure */
-  --color-border: #e4e4e7;
-  --color-input: #e4e4e7;
-  --color-ring: #2563eb;
-
-  /* Brand */
-  --color-primary: #1e3a8a;
-  --color-primary-fg: #ffffff;
-
-  --color-secondary: #9333ea;
-  --color-secondary-fg: #ffffff;
-
-  --color-accent: #facc15;
-  --color-accent-fg: #18181b;
-
-  /* Muted content */
-  --color-muted: #f4f4f5;
-  --color-muted-fg: #71717a;
-}
-
-[data-theme="dark"] {
-  /* Application */
-  --color-bg: #18181b;
-  --color-fg: #fafafa;
-
-  /* Surfaces */
-  --color-surface: #27272a;
-  --color-surface-fg: #fafafa;
-  --color-surface-muted: #3f3f46;
-
-  /* Structure */
-  --color-border: #3f3f46;
-  --color-input: #3f3f46;
-  --color-ring: #60a5fa;
-
-  /* Brand */
-  --color-primary: #3b82f6;
-  --color-primary-fg: #ffffff;
-
-  --color-secondary: #a855f7;
-  --color-secondary-fg: #ffffff;
-
-  --color-accent: #facc15;
-  --color-accent-fg: #18181b;
-
-  /* Muted content */
-  --color-muted: #27272a;
-  --color-muted-fg: #a1a1aa;
+  --color-info: #3b82f6;
+  --color-info-fg: #ffffff;
 }

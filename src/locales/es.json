@@ -19,10 +19,16 @@
     "signIn": "Iniciar sesión",
     "signOut": "Cerrar sesión",
     "signingOut": "Cerrando sesión…",
+    "login": "Iniciar sesión",
+    "loggingIn": "Iniciando sesión…",
+    "logout": "Cerrar sesión",
+    "loggingOut": "Cerrando sesión…",
     "createAccount": "Crear cuenta",
+    "signUp": "Registrarse",
     "accountSettings": "Configuración de cuenta",
     "backToHome": "Volver al inicio",
     "backToSignIn": "Volver al inicio de sesión",
+    "backToLogin": "Volver al inicio de sesión",
     "forgotPassword": "He olvidado mi contraseña",
     "alreadyHaveAccount": "Ya tengo una cuenta"
   },
@@ -56,6 +62,8 @@
     "configured": "La autenticación y el perfil están configurados correctamente."
   },
   "auth": {
+    "loginDescription": "Introduce tu correo electrónico para iniciar sesión en tu cuenta.",
+    "registerDescription": "Introduce tu correo electrónico para registrarte.",
     "resetPassword": "Restablece tu contraseña",
     "resetEmailSent": "Se ha enviado el correo para restablecer la contraseña. Revisa la carpeta de spam o correo no deseado si no llega pronto.",
     "passwordsDoNotMatch": "Las contraseñas no coinciden.",

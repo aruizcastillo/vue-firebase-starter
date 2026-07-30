@@ -19,10 +19,16 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "signingOut": "Signing out…",
+    "login": "Login",
+    "loggingIn": "Logging in…",
+    "logout": "Logout",
+    "loggingOut": "Logging out…",
     "createAccount": "Create account",
+    "signUp": "Sign up",
     "accountSettings": "Account settings",
     "backToHome": "Back to home",
     "backToSignIn": "Back to sign in",
+    "backToLogin": "Back to login",
     "forgotPassword": "I forgot my password",
     "alreadyHaveAccount": "I already have an account"
   },
@@ -56,6 +62,8 @@
     "configured": "The authentication and profile are configured correctly."
   },
   "auth": {
+    "loginDescription": "Enter your information below to sign in to your account.",
+    "registerDescription": "Enter your information below to create an account.",
     "resetPassword": "Reset your password",
     "resetEmailSent": "The password reset email has been sent. Check your spam or junk folder if it does not arrive shortly.",
     "passwordsDoNotMatch": "The passwords do not match.",
