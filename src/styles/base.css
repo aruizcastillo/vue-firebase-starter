@@ -112,4 +112,8 @@ body {
   h3 {
     @apply font-heading;
   }
+
+  main {
+    @apply flex min-h-screen flex-col max-w-screen-lg mx-auto p-8;
+  }
 }
