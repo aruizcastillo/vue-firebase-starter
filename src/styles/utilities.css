@@ -1,0 +1,22 @@
+/* Utilities */
+
+/* Gap */
+@utility gap-none {
+  gap: 0;
+}
+
+@utility gap-sm {
+  @apply gap-2;
+}
+
+@utility gap-md {
+  @apply gap-4;
+}
+
+@utility gap-lg {
+  @apply gap-6;
+}
+
+@utility gap-xl {
+  @apply gap-8;
+}

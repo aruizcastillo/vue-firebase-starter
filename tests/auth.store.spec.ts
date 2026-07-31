@@ -134,9 +134,7 @@ describe('auth store', () => {
   it('returns a neutral success for an unknown password-reset email', async () => {
     const store = await initializeSignedOutStore()
 
-    authMocks.resetPassword.mockRejectedValue(
-      new FirebaseError('auth/user-not-found', 'Unknown user'),
-    )
+    authMocks.resetPassword.mockRejectedValue(new FirebaseError('auth/user-not-found', 'Unknown user'))
 
     await expect(store.sendPasswordReset('missing@example.com')).resolves.toBe(true)
     expect(store.error).toBeNull()

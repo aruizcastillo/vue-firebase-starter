@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeMount } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import LoginForm from '@/components/auth/LoginForm.vue'
 import { useAuthStore } from '@/stores/auth.store'
+
+import { PageContainer } from '@/components/ui/page'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,15 +27,7 @@ async function handleSuccess(): Promise<void> {
 </script>
 
 <template>
-  <section class="auth-card">
-    <h1>{{ $t('navigation.signIn') }}</h1>
-
-    <LoginForm @success="handleSuccess" />
-
-    <nav>
-      <RouterLink to="/forgot-password">{{ $t('navigation.forgotPassword') }}</RouterLink>
-
-      <RouterLink to="/register">{{ $t('navigation.createAccount') }}</RouterLink>
-    </nav>
-  </section>
+  <PageContainer centered>
+    <LoginForm @success="handleSuccess" class="w-full max-w-md" />
+  </PageContainer>
 </template>

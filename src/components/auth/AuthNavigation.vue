@@ -11,9 +11,7 @@ const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const { t } = useI18n()
 
-const userLabel = computed(
-  () => profileStore.profile?.displayName || authStore.user?.email || t('common.user'),
-)
+const userLabel = computed(() => profileStore.profile?.displayName || authStore.user?.email || t('common.user'))
 
 async function handleLogout(): Promise<void> {
   const succeeded = await authStore.signOut()
@@ -23,18 +21,14 @@ async function handleLogout(): Promise<void> {
 
 <template>
   <nav v-if="authStore.isAuthenticated" class="auth-navigation" :aria-label="t('navigation.user')">
-    <RouterLink class="auth-navigation__user" :to="{ name: 'profile' }">{{ userLabel }}</RouterLink>
+    <RouterLink class="auth-navigation__user" :to="{ name: 'account-settings' }">{{ userLabel }}</RouterLink>
     <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout">
-      {{
-        authStore.authStatus === 'signing-out'
-          ? t('navigation.signingOut')
-          : t('navigation.signOut')
-      }}
+      {{ authStore.authStatus === 'signing-out' ? t('navigation.signingOut') : t('navigation.signOut') }}
     </button>
   </nav>
 
   <nav v-else class="auth-navigation" :aria-label="t('navigation.authentication')">
-    <RouterLink :to="{ name: 'login' }">{{ t('navigation.signIn') }}</RouterLink>
-    <RouterLink :to="{ name: 'register' }">{{ t('navigation.createAccount') }}</RouterLink>
+    <RouterLink :to="{ name: 'login' }">{{ t('navigation.login') }}</RouterLink>
+    <RouterLink :to="{ name: 'register' }">{{ t('navigation.signUp') }}</RouterLink>
   </nav>
 </template>

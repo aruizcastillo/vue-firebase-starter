@@ -1,9 +1,13 @@
+<script setup lang="ts">
+import { PageContainer } from '@/components/ui/page'
+</script>
+
 <template>
-  <section class="welcome-page">
+  <PageContainer centered>
     <h1>{{ $t('app.name') }}</h1>
 
     <p>
       {{ $t('welcome.description') }}
     </p>
-  </section>
+  </PageContainer>
 </template>

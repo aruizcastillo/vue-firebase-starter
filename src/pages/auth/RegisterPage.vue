@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onBeforeMount } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 import RegisterForm from '@/components/auth/RegisterForm.vue'
 import { useAuthStore } from '@/stores/auth.store'
+
+import { PageContainer } from '@/components/ui/page'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -18,11 +20,7 @@ async function handleSuccess(): Promise<void> {
 </script>
 
 <template>
-  <section class="auth-card">
-    <h1>{{ $t('navigation.createAccount') }}</h1>
-
-    <RegisterForm @success="handleSuccess" />
-
-    <RouterLink to="/login">{{ $t('navigation.alreadyHaveAccount') }}</RouterLink>
-  </section>
+  <PageContainer centered>
+    <RegisterForm @success="handleSuccess" class="w-full max-w-md" />
+  </PageContainer>
 </template>

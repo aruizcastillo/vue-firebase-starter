@@ -3,15 +3,7 @@ import { FirebaseError } from 'firebase/app'
 import type { PasswordValidationStatus, User, UserCredential } from 'firebase/auth'
 import { defineStore } from 'pinia'
 
-import {
-  checkPasswordAgainstPolicy,
-  loginWithEmail,
-  loginWithGoogle,
-  logout,
-  observeAuthState,
-  registerWithEmail,
-  resetPassword,
-} from '@/services/auth.service'
+import { checkPasswordAgainstPolicy, loginWithEmail, loginWithGoogle, logout, observeAuthState, registerWithEmail, resetPassword } from '@/services/auth.service'
 import { useProfileStore } from '@/stores/profile.store'
 import type { AuthStatus } from '@/types/auth.types'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
@@ -31,11 +23,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => user.value !== null)
   const authLoading = computed(() => {
-    return (
-      authStatus.value === 'restoring' ||
-      authStatus.value === 'authenticating' ||
-      authStatus.value === 'signing-out'
-    )
+    return authStatus.value === 'restoring' || authStatus.value === 'authenticating' || authStatus.value === 'signing-out'
   })
 
   function clearError(): void {
@@ -140,9 +128,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function validateRegistrationPassword(
-    password: string,
-  ): Promise<PasswordValidationStatus | null> {
+  async function validateRegistrationPassword(password: string): Promise<PasswordValidationStatus | null> {
     operationLoading.value = true
     error.value = null
 

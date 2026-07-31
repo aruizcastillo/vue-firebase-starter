@@ -9,8 +9,7 @@ const profileErrorKeys: Record<string, string> = {
 }
 
 export function getProfileErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message === 'profile-creation-failed')
-    return i18n.global.t('errors.profileCreationFailed')
+  if (error instanceof Error && error.message === 'profile-creation-failed') return i18n.global.t('errors.profileCreationFailed')
   if (!(error instanceof FirebaseError)) return i18n.global.t('errors.operationFailed')
   return i18n.global.t(profileErrorKeys[error.code] ?? 'errors.operationFailed')
 }

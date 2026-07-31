@@ -47,10 +47,7 @@ describe('profile store', () => {
 
     deferredProfile.resolve(createProfile(user))
 
-    await expect(Promise.all([firstSynchronization, secondSynchronization])).resolves.toEqual([
-      true,
-      true,
-    ])
+    await expect(Promise.all([firstSynchronization, secondSynchronization])).resolves.toEqual([true, true])
   })
 
   it('ignores synchronization results after reset', async () => {
@@ -77,9 +74,7 @@ describe('profile store', () => {
     const bob = createUser('bob')
     const deferredAliceProfile = createDeferred<ReturnType<typeof createProfile>>()
 
-    profileMocks.ensureUserProfile
-      .mockReturnValueOnce(deferredAliceProfile.promise)
-      .mockResolvedValueOnce(createProfile(bob))
+    profileMocks.ensureUserProfile.mockReturnValueOnce(deferredAliceProfile.promise).mockResolvedValueOnce(createProfile(bob))
 
     const aliceSynchronization = store.synchronize(alice)
     await store.synchronize(bob)
@@ -94,12 +89,10 @@ describe('profile store', () => {
     const store = useProfileStore()
     const user = createUser('alice')
 
-    profileMocks.ensureUserProfile
-      .mockResolvedValueOnce(createProfile(user))
-      .mockResolvedValueOnce({
-        ...createProfile(user),
-        displayName: 'Updated name',
-      })
+    profileMocks.ensureUserProfile.mockResolvedValueOnce(createProfile(user)).mockResolvedValueOnce({
+      ...createProfile(user),
+      displayName: 'Updated name',
+    })
     profileMocks.updateUserProfile.mockResolvedValue(undefined)
 
     await store.synchronize(user)
@@ -140,9 +133,7 @@ describe('profile store', () => {
     const store = useProfileStore()
     const user = createUser('alice')
 
-    profileMocks.updateUserProfile.mockRejectedValue(
-      new FirebaseError('auth/network-request-failed', 'Network unavailable'),
-    )
+    profileMocks.updateUserProfile.mockRejectedValue(new FirebaseError('auth/network-request-failed', 'Network unavailable'))
 
     await expect(store.update(user, 'Alice')).resolves.toBe(false)
 

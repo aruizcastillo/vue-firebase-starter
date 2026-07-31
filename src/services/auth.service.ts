@@ -1,22 +1,4 @@
-import {
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  EmailAuthProvider,
-  onAuthStateChanged,
-  reauthenticateWithCredential,
-  reauthenticateWithPopup,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-  updatePassword,
-  verifyBeforeUpdateEmail,
-  validatePassword,
-  type PasswordValidationStatus,
-  type Unsubscribe,
-  type User,
-  type UserCredential,
-} from 'firebase/auth'
+import { GoogleAuthProvider, createUserWithEmailAndPassword, EmailAuthProvider, onAuthStateChanged, reauthenticateWithCredential, reauthenticateWithPopup, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, verifyBeforeUpdateEmail, validatePassword, type PasswordValidationStatus, type Unsubscribe, type User, type UserCredential } from 'firebase/auth'
 
 import { auth } from '@/firebase/auth'
 import { useFirebaseEmulators } from '@/firebase/config'
@@ -49,11 +31,7 @@ export function resetPassword(email: string): Promise<void> {
   return sendPasswordResetEmail(auth, email)
 }
 
-export async function requestEmailChange(
-  user: User,
-  newEmail: string,
-  password?: string,
-): Promise<void> {
+export async function requestEmailChange(user: User, newEmail: string, password?: string): Promise<void> {
   const providers = user.providerData.map((provider) => provider.providerId)
 
   if (providers.includes('password')) {
@@ -61,10 +39,7 @@ export async function requestEmailChange(
       throw new Error(authServiceErrorCodes.passwordConfirmationRequired)
     }
 
-    await reauthenticateWithCredential(
-      user,
-      EmailAuthProvider.credential(user.email ?? '', password),
-    )
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', password))
   } else if (providers.includes('google.com')) {
     await reauthenticateWithPopup(user, googleProvider)
   } else {
@@ -74,15 +49,8 @@ export async function requestEmailChange(
   await verifyBeforeUpdateEmail(user, newEmail)
 }
 
-export async function changePassword(
-  user: User,
-  currentPassword: string,
-  newPassword: string,
-): Promise<void> {
-  await reauthenticateWithCredential(
-    user,
-    EmailAuthProvider.credential(user.email ?? '', currentPassword),
-  )
+export async function changePassword(user: User, currentPassword: string, newPassword: string): Promise<void> {
+  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', currentPassword))
   await updatePassword(user, newPassword)
 }
 
