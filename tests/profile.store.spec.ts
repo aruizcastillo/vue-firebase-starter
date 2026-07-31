@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const profileMocks = vi.hoisted(() => ({
   ensureUserProfile: vi.fn(),
+  setUserAccountStatus: vi.fn(),
   updateUserProfile: vi.fn(),
 }))
 
@@ -46,10 +47,7 @@ describe('profile store', () => {
 
     deferredProfile.resolve(createProfile(user))
 
-    await expect(Promise.all([firstSynchronization, secondSynchronization])).resolves.toEqual([
-      true,
-      true,
-    ])
+    await expect(Promise.all([firstSynchronization, secondSynchronization])).resolves.toEqual([true, true])
   })
 
   it('ignores synchronization results after reset', async () => {
@@ -76,9 +74,7 @@ describe('profile store', () => {
     const bob = createUser('bob')
     const deferredAliceProfile = createDeferred<ReturnType<typeof createProfile>>()
 
-    profileMocks.ensureUserProfile
-      .mockReturnValueOnce(deferredAliceProfile.promise)
-      .mockResolvedValueOnce(createProfile(bob))
+    profileMocks.ensureUserProfile.mockReturnValueOnce(deferredAliceProfile.promise).mockResolvedValueOnce(createProfile(bob))
 
     const aliceSynchronization = store.synchronize(alice)
     await store.synchronize(bob)
@@ -93,12 +89,10 @@ describe('profile store', () => {
     const store = useProfileStore()
     const user = createUser('alice')
 
-    profileMocks.ensureUserProfile
-      .mockResolvedValueOnce(createProfile(user))
-      .mockResolvedValueOnce({
-        ...createProfile(user),
-        displayName: 'Updated name',
-      })
+    profileMocks.ensureUserProfile.mockResolvedValueOnce(createProfile(user)).mockResolvedValueOnce({
+      ...createProfile(user),
+      displayName: 'Updated name',
+    })
     profileMocks.updateUserProfile.mockResolvedValue(undefined)
 
     await store.synchronize(user)
@@ -139,14 +133,25 @@ describe('profile store', () => {
     const store = useProfileStore()
     const user = createUser('alice')
 
-    profileMocks.updateUserProfile.mockRejectedValue(
-      new FirebaseError('auth/network-request-failed', 'Network unavailable'),
-    )
+    profileMocks.updateUserProfile.mockRejectedValue(new FirebaseError('auth/network-request-failed', 'Network unavailable'))
 
     await expect(store.update(user, 'Alice')).resolves.toBe(false)
 
     expect(store.error).toBe('Could not connect to the authentication service.')
     expect(store.updating).toBe(false)
+  })
+
+  it('updates the account status without changing profile identity fields', async () => {
+    const store = useProfileStore()
+    const user = createUser('alice')
+    profileMocks.ensureUserProfile.mockResolvedValue(createProfile(user))
+    profileMocks.setUserAccountStatus.mockResolvedValue(undefined)
+
+    await store.synchronize(user)
+    await expect(store.updateStatus(user, 'deactivated')).resolves.toBe(true)
+
+    expect(profileMocks.setUserAccountStatus).toHaveBeenCalledWith('alice', 'deactivated')
+    expect(store.profile?.status).toBe('deactivated')
   })
 })
 
@@ -165,6 +170,7 @@ function createProfile(user: User) {
     email: user.email,
     displayName: user.displayName ?? '',
     photoURL: user.photoURL,
+    status: 'active' as const,
     createdAt: null,
     updatedAt: null,
   }

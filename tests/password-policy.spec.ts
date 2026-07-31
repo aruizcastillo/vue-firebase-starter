@@ -1,10 +1,7 @@
 import type { PasswordValidationStatus } from 'firebase/auth'
 import { describe, expect, it } from 'vitest'
 
-import {
-  getEmulatorPasswordValidationStatus,
-  getPasswordPolicyMessage,
-} from '@/utils/password-policy'
+import { getEmulatorPasswordValidationStatus, getPasswordPolicyMessage } from '@/utils/password-policy'
 
 describe('password policy message', () => {
   it('uses the Auth Emulator minimum without requesting its unsupported policy endpoint', () => {
@@ -33,8 +30,6 @@ describe('password policy message', () => {
       },
     } as PasswordValidationStatus
 
-    expect(getPasswordPolicyMessage(status)).toBe(
-      'The password must contain at least 10 characters, an uppercase letter and a number.',
-    )
+    expect(getPasswordPolicyMessage(status)).toBe('The password must contain at least 10 characters, an uppercase letter and a number.')
   })
 })

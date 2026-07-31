@@ -10,11 +10,14 @@ project needs them.
 ## Included
 
 - Vue, Vue Router, and Pinia with TypeScript.
+- Vue I18n with complete English and Spanish translations for all interface text.
 - Email/password and Google authentication.
-- Password reset.
+- Account recovery, verified email changes, password changes, and account deactivation.
 - Auth session restoration before route guards run.
-- Private `users/{uid}` profiles in Cloud Firestore.
+- Private `users/{uid}` profiles and account status controls in Cloud Firestore.
 - Separate Pinia stores for authentication state and profile state.
+- Public, guest-only, and protected routes, including a restricted account screen.
+- Dedicated public, authentication, and application layouts.
 - Auth and Firestore emulators.
 - Unit tests and isolated Firestore Security Rules tests.
 
@@ -87,8 +90,16 @@ Review the following Authentication settings:
   that will host the SPA. Use only the hostname, without protocol, path, or port.
   `localhost` is normally used for local development.
 - **Password policy:** under `Authentication > Settings > Password policy`,
-  choose the requirements for derived projects. Registration validates the
-  password against this policy before creating the account.
+  enable enforcement. A sensible baseline is at least 12 characters with
+  lowercase, uppercase, numeric, and non-alphanumeric characters. The app reads
+  this policy and shows its requirements during registration and password changes.
+  Tightening the policy does not normally invalidate existing passwords: those
+  users can continue signing in. Enable Firebase's **Force upgrade on sign-in**
+  option only when existing email/password users must change their password at
+  their next sign-in; test the recovery flow before enabling it in production.
+- **Email templates:** under `Authentication > Templates`, review the email
+  verification template and its sender details. Firebase uses it when users
+  confirm an email change. Test delivery to a real inbox before launch.
 - **Email enumeration protection:** keep it enabled. Newer Firebase projects
   enable it by default. The application already uses neutral password-reset and
   login responses that are compatible with it.
@@ -176,6 +187,10 @@ The Firebase configuration, rules, indexes, and emulators are already
 initialized in this repository. Do not run `firebase init` unless a derived
 project intentionally needs to add or reconfigure Firebase products.
 
+`VITE_FIREBASE_PROJECT_ID` selects the project used by the browser. `.firebaserc`
+selects the project targeted by Firebase CLI deployments. Check that both point
+to the intended environment before releasing.
+
 ## Phase 3 - Develop with local emulators
 
 Set this value in `.env`:
@@ -218,6 +233,9 @@ Consequently, a locally accepted password may still fail in production if the
 project requires additional complexity or a longer minimum. Test custom
 policies against the real project when they are important to a derived app.
 
+The emulators do not deliver real verification or password-reset emails. Test
+those flows against a real Firebase project and check Spam/Promotions folders.
+
 ### Manual test checklist
 
 ```text
@@ -229,15 +247,19 @@ policies against the real project when they are important to a derived app.
 5. Open /login while authenticated: it should redirect to /.
 6. Update the display name from /profile.
 7. Sign out: it should return to /welcome.
-8. Request a password-reset email.
-9. Sign in through the Google emulator popup.
-10. Confirm the private users/{uid} document in the Emulator UI.
+8. Change the password for an email/password account.
+9. Request a password-reset email.
+10. Verify an email change against a real project.
+11. Deactivate an account, sign in again, and reactivate it.
+12. Suspend an account manually and confirm it cannot self-reactivate.
+13. Sign in through the Google emulator popup.
+14. Confirm the private users/{uid} document in the Emulator UI.
 ```
 
 Google login through the emulator does not use a real Google account. The
 emulator popup accepts simulated provider data.
 
-## Phase 4 - Authentication and profile lifecycle
+## Phase 4 - Authentication and account management
 
 Firebase Authentication is the source of truth for the signed-in identity.
 `onAuthStateChanged` restores the session before protected route guards decide
@@ -259,10 +281,47 @@ interface UserProfile {
   email: string | null
   displayName: string
   photoURL: string | null
+  status: 'active' | 'deactivated' | 'suspended'
   createdAt: Timestamp
   updatedAt: Timestamp
 }
 ```
+
+New profiles always start as `active`. The app keeps identity fields in this
+document synchronized with Firebase Authentication whenever the account is active.
+
+### What users can manage
+
+- **Email address:** users request a verified change from Profile. Email/password
+  users confirm their current password; Google users complete a normal Google
+  reauthentication popup. The popup is expected. Firebase sends the confirmation
+  link to the _new_ address; check Spam/Promotions if it is delayed. The profile
+  is synchronized after the link has been opened.
+- **Password:** this is available only to email/password users. It requires the
+  current password and follows the Firebase password policy. Google-only users
+  manage their password with Google instead.
+- **Password reset:** the sign-in screen sends Firebase's standard reset email.
+  The hosted Firebase reset page also enforces the configured policy.
+- **Deactivation:** a user can deactivate their account without losing data.
+  The app signs them out; after the next sign-in they can reactivate it from the
+  restricted account screen.
+
+### Account states
+
+| Status        | User experience                                                                                                     | Who can restore access                                                                                            |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `active`      | Full application access.                                                                                            | Not applicable.                                                                                                   |
+| `deactivated` | No normal access; the restricted screen offers reactivation or sign-out.                                            | The user or a project administrator.                                                                              |
+| `suspended`   | No normal access and no self-service reactivation. Show a support/contact path appropriate for the derived product. | A Firebase project administrator, using the Firestore Console or Admin SDK, by setting `status` back to `active`. |
+
+Firestore Console and Admin SDK operations are administrative and bypass client
+Security Rules. This is intentional: a project owner can restore a suspended
+account, while the user cannot. Do not expose a client-side action that writes
+`suspended`.
+
+To suspend or restore an account manually, edit `users/{uid}.status` in the
+Firestore Console. Derived projects should replace the suspended-account message
+with a real support contact.
 
 Authentication success and profile synchronization are intentionally separate.
 If Firestore is temporarily unavailable, login still succeeds and the
@@ -284,6 +343,8 @@ succeeded while the other failed.
 - email equality with the Firebase Auth token;
 - immutable `createdAt`;
 - server-controlled `createdAt` and `updatedAt`;
+- controlled account-state transitions: users can deactivate and reactivate only
+  their own deactivated account; suspended accounts are read-only from the client;
 - default denial for every other path, including user subcollections.
 
 `firestore.rules.audit.md` records the assumptions and red-team checklist.
@@ -301,6 +362,30 @@ Always verify the active project before deployment:
 ```bash
 pnpm exec firebase use
 ```
+
+## Phase 6 - Deploy
+
+Add the Firebase web configuration from `.env` to the hosting platform's
+production environment. Copy each value exactly, without surrounding quotes,
+commas, or other characters copied from a JSON snippet.
+
+Before releasing:
+
+- Add the production domain, preview domains that need sign-in, and any other
+  intended hostnames under `Authentication > Settings > Authorized domains` in
+  the Firebase Console. Enter hostnames only, without protocol, path, or port.
+- Confirm the production Firebase project is selected with `pnpm exec firebase use`.
+- Confirm that `.firebaserc` and `VITE_FIREBASE_PROJECT_ID` target the intended
+  production project.
+- Deploy the current Firestore rules and indexes with `pnpm firebase:deploy:rules`.
+- Test email/password sign-in, Google sign-in, password reset, and the verified
+  email-change flow on the deployed domain.
+
+Keep `VITE_USE_FIREBASE_EMULATORS=false` in production. The app only connects
+to emulators in Vite development mode, but this value makes the deployment
+intent explicit.
+
+---
 
 ## Quality checks
 
@@ -329,6 +414,9 @@ changes should be written.
 3. Create and configure the Firebase project through the Console.
 4. Copy `.env.example` to `.env` and insert the new web configuration.
 5. Run `pnpm exec firebase use --add`.
-6. Confirm that the Firestore location in `firebase.json` matches the database.
-7. Start the emulators and complete the manual checklist.
-8. Run the complete quality checks before adding project-specific features.
+6. Configure authorized domains, the password policy, and email templates in
+   Firebase Authentication.
+7. Confirm that the Firestore location in `firebase.json` matches the database.
+8. Deploy Firestore rules with `pnpm firebase:deploy:rules`.
+9. Start the emulators and complete the manual checklist.
+10. Run the complete quality checks before adding project-specific features.

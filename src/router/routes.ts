@@ -14,9 +14,24 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/HomePage.vue'),
       },
       {
-        path: 'profile',
-        name: 'profile',
-        component: () => import('@/pages/ProfilePage.vue'),
+        path: 'account/settings',
+        name: 'account-settings',
+        component: () => import('@/pages/auth/AccountSettingsPage.vue'),
+      },
+    ],
+  },
+  {
+    path: '/account-deactivated',
+    component: () => import('@/layouts/AuthLayout.vue'),
+    meta: {
+      requiresAuth: true,
+      allowDeactivated: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'account-deactivated',
+        component: () => import('@/pages/auth/AccountDeactivatedPage.vue'),
       },
     ],
   },

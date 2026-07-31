@@ -1,16 +1,9 @@
 import { updateProfile as updateAuthProfile, type User } from 'firebase/auth'
-import {
-  doc,
-  getDoc,
-  runTransaction,
-  serverTimestamp,
-  updateDoc,
-  type QueryDocumentSnapshot,
-} from 'firebase/firestore'
+import { doc, getDoc, runTransaction, serverTimestamp, updateDoc, type QueryDocumentSnapshot } from 'firebase/firestore'
 
 import { db } from '@/firebase/firestore'
 
-import type { UpdateUserProfileData, UserProfile } from '@/types/profile.types'
+import type { UpdateUserProfileData, UserAccountStatus, UserProfile } from '@/types/profile.types'
 
 function getUserReference(userId: string) {
   return doc(db, 'users', userId)
@@ -34,6 +27,7 @@ function mapUserProfile(snapshot: QueryDocumentSnapshot): UserProfile {
     email: typeof data.email === 'string' ? data.email : null,
     displayName: typeof data.displayName === 'string' ? data.displayName : '',
     photoURL: typeof data.photoURL === 'string' ? data.photoURL : null,
+    status: data.status === 'deactivated' || data.status === 'suspended' ? data.status : 'active',
     createdAt: data.createdAt ?? null,
     updatedAt: data.updatedAt ?? null,
   }
@@ -53,6 +47,7 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
     if (!snapshot.exists()) {
       transaction.set(reference, {
         ...authProfile,
+        status: 'active',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
@@ -60,14 +55,14 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
     }
 
     const data = snapshot.data()
-    const identityChanged =
-      data.email !== authProfile.email ||
-      data.displayName !== authProfile.displayName ||
-      data.photoURL !== authProfile.photoURL
+    const identityChanged = data.email !== authProfile.email || data.displayName !== authProfile.displayName || data.photoURL !== authProfile.photoURL
 
-    if (identityChanged) {
+    // A deactivated or suspended account may not reconcile identity fields.
+    // Do not reconcile identity fields until it is active again.
+    if (data.status !== 'deactivated' && data.status !== 'suspended' && (identityChanged || data.status !== 'active')) {
       transaction.update(reference, {
         ...authProfile,
+        status: 'active',
         updatedAt: serverTimestamp(),
       })
     }
@@ -76,10 +71,17 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
   const createdProfile = await getUserProfile(user.uid)
 
   if (!createdProfile) {
-    throw new Error('The user profile could not be created.')
+    throw new Error('profile-creation-failed')
   }
 
   return createdProfile
+}
+
+export async function setUserAccountStatus(userId: string, status: UserAccountStatus): Promise<void> {
+  await updateDoc(getUserReference(userId), {
+    status,
+    updatedAt: serverTimestamp(),
+  })
 }
 
 export async function updateUserProfile(user: User, data: UpdateUserProfileData): Promise<void> {

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+
+import { PageContainer } from '@/components/ui/page'
 </script>
 
 <template>
-  <main>
-    <h1>Page not found</h1>
+  <PageContainer centered>
+    <h1>{{ $t('notFound.title') }}</h1>
 
-    <RouterLink to="/"> Back to home </RouterLink>
-  </main>
+    <RouterLink to="/">{{ $t('navigation.backToHome') }}</RouterLink>
+  </PageContainer>
 </template>
