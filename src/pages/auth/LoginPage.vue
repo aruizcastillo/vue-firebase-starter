@@ -5,6 +5,8 @@ import { useRoute, useRouter } from 'vue-router'
 import LoginForm from '@/components/auth/LoginForm.vue'
 import { useAuthStore } from '@/stores/auth.store'
 
+import { PageContainer } from '@/components/ui/page'
+
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -25,7 +27,7 @@ async function handleSuccess(): Promise<void> {
 </script>
 
 <template>
-  <section class="auth-card">
+  <PageContainer centered>
     <LoginForm @success="handleSuccess" />
-  </section>
+  </PageContainer>
 </template>

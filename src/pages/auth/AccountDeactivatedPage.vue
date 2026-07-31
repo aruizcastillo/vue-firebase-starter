@@ -8,6 +8,7 @@ import { useProfileStore } from '@/stores/profile.store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { FieldError } from '@/components/ui/field'
+import { PageContainer } from '@/components/ui/page'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -36,7 +37,7 @@ async function signOut(): Promise<void> {
 </script>
 
 <template>
-  <section class="auth-card">
+  <PageContainer centered>
     <Card class="w-full max-w-sm">
       <CardHeader class="flex flex-col items-center text-center">
         <CardTitle class="text-xl font-bold">{{ isSuspended ? t('account.suspended') : t('account.deactivated') }}</CardTitle>
@@ -52,5 +53,5 @@ async function signOut(): Promise<void> {
         </Button>
       </CardContent>
     </Card>
-  </section>
+  </PageContainer>
 </template>

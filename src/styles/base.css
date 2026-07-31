@@ -1,24 +1,4 @@
-.settings-section--danger button {
-  color: var(--color-error-fg);
-  background: var(--color-error);
-}
-
-.form-error {
-  color: var(--color-error);
-}
-
-.form-success {
-  color: var(--color-success);
-}
-
-.form-hint {
-  color: #52525b;
-}
-
-body {
-  min-height: 100dvh;
-}
-
+/* Custom base */
 .app-header {
   display: flex;
   align-items: center;
@@ -102,10 +82,6 @@ body {
   }
 }
 
-.auth-card {
-  @apply flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-8;
-}
-
 @layer base {
   h1,
   h2,
@@ -114,6 +90,6 @@ body {
   }
 
   main {
-    @apply flex min-h-screen flex-col max-w-screen-lg mx-auto p-8;
+    @apply flex flex-1 flex-col;
   }
 }

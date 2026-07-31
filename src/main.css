@@ -2,14 +2,15 @@
 
 @import 'tailwindcss';
 
-@import './styles/tokens.css';
 @import './styles/themes.css';
 @import './styles/base.css';
 @import './styles/components.css';
 @import 'tw-animate-css';
 
+/* Custom variants */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* Shadcn theme tokens */
 @theme inline {
   --font-sans: var(--font-base), sans-serif;
   --font-heading: var(--font-title), var(--font-base), var(--font-sans);
@@ -50,6 +51,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Shadcn base styles */
 @layer base {
   * {
     @apply border-border outline-ring/50;

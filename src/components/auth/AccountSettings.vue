@@ -138,8 +138,7 @@ async function handleDeactivation(): Promise<void> {
 </script>
 
 <template>
-  <div class="grid gap-6">
-    <Card aria-labelledby="change-email-heading">
+    <Card aria-labelledby="change-email-heading" class="w-full max-w-sm">
       <CardHeader class="flex flex-col items-center text-center">
         <CardTitle id="change-email-heading" class="text-xl font-bold">{{ t('account.changeEmail') }}</CardTitle>
         <CardDescription>{{ t('account.emailIntro') }}</CardDescription>
@@ -222,5 +221,4 @@ async function handleDeactivation(): Promise<void> {
         </Button>
       </CardContent>
     </Card>
-  </div>
 </template>

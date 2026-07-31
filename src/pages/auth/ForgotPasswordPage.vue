@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { PageContainer } from '@/components/ui/page'
 
 const authStore = useAuthStore()
 
@@ -29,7 +30,7 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <template>
-  <section class="auth-card">
+  <PageContainer centered>
     <Card class="w-full max-w-sm">
       <CardHeader class="flex flex-col items-center text-center">
         <CardTitle class="text-xl font-bold">{{ $t('auth.resetPassword') }}</CardTitle>
@@ -57,5 +58,5 @@ async function handleSubmit(): Promise<void> {
         </CardAction>
       </CardFooter>
     </Card>
-  </section>
+  </PageContainer>
 </template>
