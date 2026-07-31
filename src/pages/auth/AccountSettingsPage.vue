@@ -12,12 +12,12 @@ const { t } = useI18n()
 
 <template>
   <PageContainer centered>
-    <div class="flex flex-row items-center justify-between">
+    <div class="flex flex-row items-center justify-between w-full max-w-md">
       <h1 class="text-xl font-bold">{{ t('account.settings') }}</h1>
       <RouterLink to="/" class="link-muted text-sm">{{ t('navigation.backToHome') }}</RouterLink>
     </div>
 
-    <ProfileSettings />
-    <AccountSettings />
+    <ProfileSettings class="w-full max-w-md" />
+    <AccountSettings class="w-full max-w-md" />
   </PageContainer>
 </template>

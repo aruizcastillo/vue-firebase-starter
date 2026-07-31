@@ -28,6 +28,6 @@ async function handleSuccess(): Promise<void> {
 
 <template>
   <PageContainer centered>
-    <LoginForm @success="handleSuccess" />
+    <LoginForm @success="handleSuccess" class="w-full max-w-md" />
   </PageContainer>
 </template>

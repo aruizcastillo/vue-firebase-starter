@@ -78,7 +78,7 @@ async function handleGoogleRegistration(): Promise<void> {
 </script>
 
 <template>
-  <Card class="w-full max-w-sm">
+  <Card>
     <CardHeader class="flex flex-col items-center text-center">
       <CardTitle class="text-xl font-bold">{{ t('navigation.signUp') }}</CardTitle>
       <CardDescription class="text-muted-foreground font-">

@@ -21,6 +21,6 @@ async function handleSuccess(): Promise<void> {
 
 <template>
   <PageContainer centered>
-    <RegisterForm @success="handleSuccess" />
+    <RegisterForm @success="handleSuccess" class="w-full max-w-md" />
   </PageContainer>
 </template>

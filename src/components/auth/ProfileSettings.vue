@@ -41,7 +41,7 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <template>
-  <Card aria-labelledby="profile-settings-heading" class="w-full max-w-sm">
+  <Card aria-labelledby="profile-settings-heading">
     <CardHeader class="flex flex-col items-center text-center">
       <CardTitle id="profile-settings-heading" class="text-xl font-bold">{{ t('profile.settings') }}</CardTitle>
     </CardHeader>
