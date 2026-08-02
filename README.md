@@ -6,15 +6,13 @@ project, then connected to its own Firebase environment.
 
 ## What's included
 
-- Vue, TypeScript, Vue Router, Pinia, Vue-i18n, Tailwind CSS, and shadcn-vue.
+- Vue, TypeScript, Vue Router, Pinia, Vue-i18n, Tailwind CSS, shadcn-vue, Formisch and Valibot.
 - English and Spanish interface translations.
 - Email/password and Google authentication.
-- Registration, password reset and change, verified email change, and account
-  deactivation.
+- Registration, password reset and change, verified email change, and account deactivation.
 - Protected, public, guest-only, and restricted-account routes.
 - A private Firestore profile for every authenticated user.
-- Firebase Auth and Firestore emulators, unit tests, and Firestore Security
-  Rules tests.
+- Firebase Auth and Firestore emulators, unit tests, and Firestore Security Rules tests.
 
 ## Architecture at a glance
 

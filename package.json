@@ -22,6 +22,7 @@
     "firebase:deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes"
   },
   "dependencies": {
+    "@formisch/vue": "1.0.0-rc.0",
     "@lucide/vue": "^1.27.0",
     "@tailwindcss/vite": "^4.3.3",
     "@vueuse/core": "^14.4.0",
@@ -32,6 +33,7 @@
     "reka-ui": "^2.10.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
+    "valibot": "^1.4.2",
     "vue": "^3.5.40",
     "vue-i18n": "^11.4.8",
     "vue-router": "^5.2.0",

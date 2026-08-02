@@ -3,12 +3,14 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Spinner } from '@/components/ui/spinner'
 import { getSafeRedirect } from '@/router/session-policy'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSessionStore } from '@/stores/session.store'
+
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
+import { PageContainer } from '@/components/ui/page'
 
 const authStore = useAuthStore()
 const sessionStore = useSessionStore()
@@ -51,7 +53,7 @@ async function signOut(): Promise<void> {
 </script>
 
 <template>
-  <div v-if="visible" class="fixed inset-0 z-50 flex min-h-dvh items-center justify-center bg-background/90 p-4 backdrop-blur-sm">
+  <PageContainer centered v-if="visible" class="fixed inset-0 z-50 bg-background/90 p-4 backdrop-blur-sm">
     <Card v-if="showError" class="w-full max-w-md" role="alert" aria-live="assertive">
       <CardHeader class="text-center">
         <CardTitle>{{ t('session.errorTitle') }}</CardTitle>
@@ -70,5 +72,5 @@ async function signOut(): Promise<void> {
       <Spinner class="size-6" />
       <p class="text-muted-foreground text-sm">{{ loadingMessage }}</p>
     </div>
-  </div>
+  </PageContainer>
 </template>

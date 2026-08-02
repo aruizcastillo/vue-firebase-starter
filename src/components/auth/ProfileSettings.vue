@@ -1,70 +1,81 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { Field as FormischField, Form, reset, setErrors, useForm } from '@formisch/vue'
+import type { SubmitHandler } from '@formisch/vue'
+import { watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
+import { createProfileSettingsSchema } from '@/schemas/profile-settings.schema'
+import { getFormischInputProps } from '@/utils/formisch-input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Spinner } from '@/components/ui/spinner'
+import { toast } from 'vue-sonner'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const { t } = useI18n()
-const displayName = ref('')
-const saved = ref(false)
-const validationError = ref<string | null>(null)
+const profileSettingsSchema = createProfileSettingsSchema(t('errors.nameTooLong'))
+const profileSettingsForm = useForm({
+  schema: profileSettingsSchema,
+  validate: 'submit',
+  revalidate: 'input',
+})
 
 watch(
   () => profileStore.profile?.displayName,
   (currentDisplayName) => {
-    displayName.value = currentDisplayName ?? ''
+    reset(profileSettingsForm, {
+      initialInput: { displayName: currentDisplayName ?? '' },
+    })
   },
   { immediate: true },
 )
 
-async function handleSubmit(): Promise<void> {
-  saved.value = false
-  validationError.value = null
-  const normalizedDisplayName = displayName.value.trim()
+const handleSubmit: SubmitHandler<typeof profileSettingsSchema> = async ({ displayName }) => {
+  setErrors(profileSettingsForm, { errors: null })
 
-  if (normalizedDisplayName.length > 80) {
-    validationError.value = t('errors.nameTooLong')
-    return
-  }
+  const updated = await profileStore.update(authStore.user, displayName)
 
-  if (await profileStore.update(authStore.user, normalizedDisplayName)) {
-    saved.value = true
+  if (updated) {
+    toast.success(t('profile.updated'))
+  } else {
+    const errorMessage = profileStore.operationError ?? t('errors.operationFailed')
+    setErrors(profileSettingsForm, { errors: [errorMessage] })
+    toast.error(errorMessage)
   }
 }
 </script>
 
 <template>
   <Card aria-labelledby="profile-settings-heading">
-    <CardHeader class="flex flex-col items-center text-center">
+    <CardHeader class="flex flex-col">
       <CardTitle id="profile-settings-heading" class="text-xl font-bold">{{ t('profile.settings') }}</CardTitle>
     </CardHeader>
     <CardContent>
-      <form id="profile-settings-form" @submit.prevent="handleSubmit">
+      <Form id="profile-settings-form" :of="profileSettingsForm" @submit="handleSubmit">
         <FieldGroup class="grid w-full items-center gap-4">
-          <Field class="flex flex-col">
+          <Field class="flex flex-col" data-disabled>
             <FieldLabel for="profile-email">{{ t('common.email') }}</FieldLabel>
             <Input id="profile-email" :model-value="profileStore.profile?.email ?? ''" type="email" disabled />
           </Field>
-          <Field class="flex flex-col">
-            <FieldLabel for="display-name">{{ t('common.name') }}</FieldLabel>
-            <Input id="display-name" v-model="displayName" type="text" autocomplete="name" maxlength="80" />
-          </Field>
-          <FieldError v-if="validationError || profileStore.operationError" class="form-error">
-            {{ validationError ?? profileStore.operationError }}
-          </FieldError>
-          <p v-if="saved" class="form-success text-sm">{{ t('profile.updated') }}</p>
+          <FormischField :of="profileSettingsForm" :path="['displayName']" v-slot="formField">
+            <Field class="flex flex-col" :data-invalid="Boolean(formField.errors)">
+              <FieldLabel for="display-name">{{ t('common.name') }}</FieldLabel>
+              <Input id="display-name" v-model="formField.input" v-bind="getFormischInputProps(formField.props)" :input-ref="formField.props.ref" :aria-invalid="formField.errors ? true : undefined" type="text" autocomplete="name" maxlength="80" />
+              <FieldError v-if="formField.errors" :errors="formField.errors" class="form-error" />
+            </Field>
+          </FormischField>
+          <FieldError v-if="profileSettingsForm.errors" :errors="profileSettingsForm.errors" class="form-error" />
         </FieldGroup>
-      </form>
+      </Form>
     </CardContent>
     <CardFooter class="flex flex-col gap-2">
-      <Button form="profile-settings-form" type="submit" class="w-full" :disabled="profileStore.updating || !profileStore.profile">
+      <Button form="profile-settings-form" type="submit" class="w-full" :disabled="profileStore.updating || profileSettingsForm.isSubmitting || !profileStore.profile">
+        <Spinner v-if="profileStore.updating" />
         {{ profileStore.updating ? t('buttons.saving') : t('buttons.save') }}
       </Button>
     </CardFooter>

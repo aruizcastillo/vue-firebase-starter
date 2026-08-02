@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@formisch/vue':
+        specifier: 1.0.0-rc.0
+        version: 1.0.0-rc.0(typescript@6.0.3)(valibot@1.4.2(typescript@6.0.3))(vue@3.5.40(typescript@6.0.3))
       '@lucide/vue':
         specifier: ^1.27.0
         version: 1.27.0(vue@3.5.40(typescript@6.0.3))
@@ -38,6 +41,9 @@ importers:
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
+      valibot:
+        specifier: ^1.4.2
+        version: 1.4.2(typescript@6.0.3)
       vue:
         specifier: ^3.5.40
         version: 3.5.40(typescript@6.0.3)
@@ -668,6 +674,16 @@ packages:
 
   '@floating-ui/vue@1.1.11':
     resolution: {integrity: sha512-HzHKCNVxnGS35r9fCHBc3+uCnjw9IWIlCPL683cGgM9Kgj2BiAl8x1mS7vtvP6F9S/e/q4O6MApwSHj8hNLGfw==}
+
+  '@formisch/vue@1.0.0-rc.0':
+    resolution: {integrity: sha512-tRObIdotqHTCCXxqn/sG7s7pWfjyx1wWbY6L5VgcomGzfhZEFNHWXfvjXaZLMq6x+Yv1qJHCkmK9sj+sZGs0cQ==}
+    peerDependencies:
+      typescript: '>=5'
+      valibot: ^1.4.1
+      vue: ^3.3.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@google-cloud/cloud-sql-connector@1.11.2':
     resolution: {integrity: sha512-ImHGgHunHoAHnQ9Bbsuq9an0rwmMdaPL8nrdQkVNnuIb0GKE+rTyjKNV+po7DJLuk84JPUUbK0cWW9AjPiAblA==}
@@ -4827,6 +4843,14 @@ packages:
     deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
+  valibot@1.4.2:
+    resolution: {integrity: sha512-gjdCvJ6d3RyHAneqxMYMW9QMCwYMb3jpOO0IyHZV1bnRHFBHrX3VkIILt5XYR0WhwHiH7Mty8ovuPZ/O3gamrg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   valid-url@1.0.9:
     resolution: {integrity: sha512-QQDsV8OnSf5Uc30CKSwG9lnhMPe6exHtTXLRYX8uMwKENy640pU+2BgBL0LRbDh/eYRahNCS7aewCx0wf3NYVA==}
 
@@ -5941,6 +5965,13 @@ snapshots:
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
+
+  '@formisch/vue@1.0.0-rc.0(typescript@6.0.3)(valibot@1.4.2(typescript@6.0.3))(vue@3.5.40(typescript@6.0.3))':
+    dependencies:
+      valibot: 1.4.2(typescript@6.0.3)
+      vue: 3.5.40(typescript@6.0.3)
+    optionalDependencies:
+      typescript: 6.0.3
 
   '@google-cloud/cloud-sql-connector@1.11.2(supports-color@7.2.0)':
     dependencies:
@@ -10360,6 +10391,10 @@ snapshots:
   uuid@14.0.1: {}
 
   uuid@9.0.1: {}
+
+  valibot@1.4.2(typescript@6.0.3):
+    optionalDependencies:
+      typescript: 6.0.3
 
   valid-url@1.0.9: {}
 

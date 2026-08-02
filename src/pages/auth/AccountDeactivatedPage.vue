@@ -39,7 +39,7 @@ async function signOut(): Promise<void> {
 <template>
   <PageContainer centered>
     <Card class="w-full max-w-sm">
-      <CardHeader class="flex flex-col items-center text-center">
+      <CardHeader class="flex flex-col">
         <CardTitle class="text-xl font-bold">{{ isSuspended ? t('account.suspended') : t('account.deactivated') }}</CardTitle>
         <CardDescription>{{ isSuspended ? t('account.suspendedDescription') : t('account.deactivatedDescription') }}</CardDescription>
       </CardHeader>

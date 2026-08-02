@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import AccountSettings from '@/components/auth/AccountSettings.vue'
@@ -14,7 +13,6 @@ const { t } = useI18n()
   <PageContainer centered>
     <div class="flex flex-row items-center justify-between w-full max-w-md">
       <h1 class="text-xl font-bold">{{ t('account.settings') }}</h1>
-      <RouterLink to="/" class="link-muted text-sm">{{ t('navigation.backToHome') }}</RouterLink>
     </div>
 
     <ProfileSettings class="w-full max-w-md" />
