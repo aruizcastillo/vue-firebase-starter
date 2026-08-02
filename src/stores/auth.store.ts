@@ -44,9 +44,12 @@ export const useAuthStore = defineStore('auth', () => {
     initializationPromise = new Promise((resolve) => {
       observeAuthState((currentUser) => {
         if (currentUser) {
+          const userChanged = user.value?.uid !== currentUser.uid
           setCurrentUser(currentUser)
           authStatus.value = 'authenticated'
-          void profileStore.synchronize(currentUser)
+          if (userChanged) {
+            profileStore.reset()
+          }
         } else {
           applySignedOutState()
         }

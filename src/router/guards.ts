@@ -10,7 +10,13 @@ export function registerRouterGuards(router: Router): void {
     await authStore.initialize()
     const profileStore = useProfileStore()
 
-    if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    if (!authStore.user) {
+      profileStore.reset()
+
+      if (!to.meta.requiresAuth) {
+        return
+      }
+
       if (to.name === 'home') {
         return {
           name: 'welcome',
@@ -25,21 +31,26 @@ export function registerRouterGuards(router: Router): void {
       }
     }
 
-    if (authStore.isAuthenticated && authStore.user) {
+    if (!profileStore.initialized) {
       await profileStore.synchronize(authStore.user)
-
-      if (profileStore.profile?.status !== 'active' && !to.meta.allowDeactivated) {
-        return { name: 'account-deactivated' }
-      }
-
-      if (profileStore.profile?.status === 'active' && to.meta.allowDeactivated) {
-        return { name: 'home' }
-      }
     }
 
-    if (to.meta.guestOnly && authStore.isAuthenticated) {
+    if (profileStore.profile?.status === 'deactivated') {
+      await authStore.signOut()
+      return { name: 'login' }
+    }
+
+    if (profileStore.profile?.status === 'suspended' && !to.meta.allowDeactivated) {
+      return { name: 'account-deactivated' }
+    }
+
+    if (profileStore.profile?.status === 'active' && to.meta.allowDeactivated) {
+      return { name: 'home' }
+    }
+
+    if (to.meta.guestOnly) {
       return {
-        name: profileStore.profile?.status !== 'active' ? 'account-deactivated' : 'home',
+        name: profileStore.profile?.status === 'suspended' ? 'account-deactivated' : 'home',
       }
     }
   })

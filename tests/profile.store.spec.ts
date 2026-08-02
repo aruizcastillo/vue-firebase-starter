@@ -30,7 +30,31 @@ describe('profile store', () => {
 
     expect(store.profile).toEqual(profile)
     expect(store.loading).toBe(false)
+    expect(store.initialized).toBe(true)
     expect(store.error).toBeNull()
+  })
+
+  it('does not synchronize an initialized profile again for the same user', async () => {
+    const store = useProfileStore()
+    const user = createUser('alice')
+    profileMocks.ensureUserProfile.mockResolvedValue(createProfile(user))
+
+    await store.synchronize(user)
+    await store.synchronize(user)
+
+    expect(profileMocks.ensureUserProfile).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks the initial profile load as resolved after an error', async () => {
+    const store = useProfileStore()
+    const user = createUser('alice')
+    profileMocks.ensureUserProfile.mockRejectedValue(new Error('Firestore unavailable'))
+
+    await expect(store.synchronize(user)).resolves.toBe(false)
+
+    expect(store.initialized).toBe(true)
+    expect(store.loading).toBe(false)
+    expect(store.error).toBe('The operation could not be completed.')
   })
 
   it('deduplicates concurrent synchronization for the same user', async () => {
@@ -65,6 +89,7 @@ describe('profile store', () => {
 
     expect(store.profile).toBeNull()
     expect(store.loading).toBe(false)
+    expect(store.initialized).toBe(false)
     expect(store.error).toBeNull()
   })
 

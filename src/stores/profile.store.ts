@@ -12,6 +12,7 @@ import { i18n } from '@/i18n'
 export const useProfileStore = defineStore('profile', () => {
   const profile = ref<UserProfile | null>(null)
   const loading = ref(false)
+  const initialized = ref(false)
   const updating = ref(false)
   const error = ref<string | null>(null)
 
@@ -20,8 +21,12 @@ export const useProfileStore = defineStore('profile', () => {
   let synchronizationPromise: Promise<UserProfile> | null = null
   let synchronizationUserId: string | null = null
 
-  async function synchronize(currentUser: User): Promise<boolean> {
+  async function synchronize(currentUser: User, force = false): Promise<boolean> {
     const currentStateVersion = activateUser(currentUser.uid)
+
+    if (!force && isCurrentState(currentUser.uid, currentStateVersion) && initialized.value) {
+      return profile.value !== null
+    }
 
     if (isCurrentState(currentUser.uid, currentStateVersion)) {
       loading.value = true
@@ -58,6 +63,7 @@ export const useProfileStore = defineStore('profile', () => {
 
       if (isCurrentState(currentUser.uid, currentStateVersion)) {
         loading.value = false
+        initialized.value = true
       }
     }
   }
@@ -68,7 +74,7 @@ export const useProfileStore = defineStore('profile', () => {
       return false
     }
 
-    return synchronize(currentUser)
+    return synchronize(currentUser, true)
   }
 
   async function update(currentUser: User | null, displayName: string): Promise<boolean> {
@@ -97,7 +103,7 @@ export const useProfileStore = defineStore('profile', () => {
           }
         }
 
-        void synchronize(currentUser)
+        void reload(currentUser)
       }
 
       return true
@@ -151,6 +157,7 @@ export const useProfileStore = defineStore('profile', () => {
     synchronizationUserId = null
     profile.value = null
     loading.value = false
+    initialized.value = false
     updating.value = false
     error.value = null
   }
@@ -161,6 +168,7 @@ export const useProfileStore = defineStore('profile', () => {
       activeUserId = userId
       profile.value = null
       loading.value = false
+      initialized.value = false
       updating.value = false
       error.value = null
     }
@@ -183,6 +191,7 @@ export const useProfileStore = defineStore('profile', () => {
   return {
     profile,
     loading,
+    initialized,
     updating,
     error,
     synchronize,
