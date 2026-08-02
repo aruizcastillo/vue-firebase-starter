@@ -1,25 +1,30 @@
 import { computed, markRaw, ref, shallowRef } from 'vue'
 import { FirebaseError } from 'firebase/app'
-import type { PasswordValidationStatus, User, UserCredential } from 'firebase/auth'
+import type { PasswordValidationStatus, Unsubscribe, User, UserCredential } from 'firebase/auth'
 import { defineStore } from 'pinia'
 
 import { checkPasswordAgainstPolicy, loginWithEmail, loginWithGoogle, logout, observeAuthState, registerWithEmail, resetPassword } from '@/services/auth.service'
-import { useProfileStore } from '@/stores/profile.store'
 import type { AuthStatus } from '@/types/auth.types'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
 
 export const useAuthStore = defineStore('auth', () => {
-  const profileStore = useProfileStore()
-
   // Firebase User is an opaque SDK object that can retain popup/window references.
   // Deep Vue reactivity can traverse those references and trigger cross-origin errors.
   const user = shallowRef<User | null>(null)
   const authStatus = ref<AuthStatus>('idle')
   const initialized = ref(false)
+  const localTransition = ref(false)
   const operationLoading = ref(false)
   const error = ref<string | null>(null)
+  const observerError = ref<string | null>(null)
 
   let initializationPromise: Promise<void> | null = null
+  let unsubscribeFromAuth: Unsubscribe | null = null
+  const authStateWaiters = new Set<{
+    userId: string | null
+    resolve: () => void
+    reject: (error: unknown) => void
+  }>()
 
   const isAuthenticated = computed(() => user.value !== null)
   const authLoading = computed(() => {
@@ -41,24 +46,41 @@ export const useAuthStore = defineStore('auth', () => {
 
     authStatus.value = 'restoring'
 
-    initializationPromise = new Promise((resolve) => {
-      observeAuthState((currentUser) => {
-        if (currentUser) {
-          const userChanged = user.value?.uid !== currentUser.uid
-          setCurrentUser(currentUser)
-          authStatus.value = 'authenticated'
-          if (userChanged) {
-            profileStore.reset()
-          }
-        } else {
-          applySignedOutState()
-        }
+    error.value = null
+    observerError.value = null
 
-        if (!initialized.value) {
-          initialized.value = true
-          resolve()
-        }
-      })
+    unsubscribeFromAuth?.()
+    unsubscribeFromAuth = null
+
+    initializationPromise = new Promise((resolve, reject) => {
+      unsubscribeFromAuth = observeAuthState(
+        (currentUser) => {
+          observerError.value = null
+          setCurrentUser(currentUser)
+          authStatus.value = currentUser ? 'authenticated' : 'unauthenticated'
+
+          if (!initialized.value) {
+            initialized.value = true
+            resolve()
+          }
+        },
+        (caughtError) => {
+          unsubscribeFromAuth?.()
+          unsubscribeFromAuth = null
+          setAuthError(caughtError)
+          observerError.value = error.value
+          authStatus.value = user.value ? 'authenticated' : 'unauthenticated'
+          const initializationPending = !initialized.value
+          initialized.value = false
+          initializationPromise = null
+
+          if (initializationPending) {
+            reject(caughtError)
+          }
+
+          rejectAuthStateWaiters(caughtError)
+        },
+      )
     })
 
     return initializationPromise
@@ -77,14 +99,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function authenticate(operation: () => Promise<UserCredential>): Promise<boolean> {
+    localTransition.value = true
     authStatus.value = 'authenticating'
     error.value = null
 
     try {
-      const credential = await operation()
+      if (!initialized.value) await initialize()
 
-      setCurrentUser(credential.user)
-      authStatus.value = 'authenticated'
+      const credential = await operation()
+      await waitForObservedUser(credential.user.uid)
 
       return true
     } catch (caughtError) {
@@ -92,16 +115,21 @@ export const useAuthStore = defineStore('auth', () => {
       authStatus.value = user.value ? 'authenticated' : 'unauthenticated'
 
       return false
+    } finally {
+      localTransition.value = false
     }
   }
 
   async function signOut(): Promise<boolean> {
+    localTransition.value = true
     authStatus.value = 'signing-out'
     error.value = null
 
     try {
+      if (!initialized.value) await initialize()
+
       await logout()
-      applySignedOutState()
+      await waitForObservedUser(null)
 
       return true
     } catch (caughtError) {
@@ -109,6 +137,8 @@ export const useAuthStore = defineStore('auth', () => {
       authStatus.value = user.value ? 'authenticated' : 'unauthenticated'
 
       return false
+    } finally {
+      localTransition.value = false
     }
   }
 
@@ -145,14 +175,30 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function applySignedOutState(): void {
-    setCurrentUser(null)
-    profileStore.reset()
-    authStatus.value = 'unauthenticated'
-  }
-
   function setCurrentUser(currentUser: User | null): void {
     user.value = currentUser ? markRaw(currentUser) : null
+
+    const userId = currentUser?.uid ?? null
+    for (const waiter of authStateWaiters) {
+      if (waiter.userId !== userId) continue
+      authStateWaiters.delete(waiter)
+      waiter.resolve()
+    }
+  }
+
+  function waitForObservedUser(userId: string | null): Promise<void> {
+    if ((user.value?.uid ?? null) === userId) return Promise.resolve()
+
+    return new Promise((resolve, reject) => {
+      authStateWaiters.add({ userId, resolve, reject })
+    })
+  }
+
+  function rejectAuthStateWaiters(caughtError: unknown): void {
+    for (const waiter of authStateWaiters) {
+      authStateWaiters.delete(waiter)
+      waiter.reject(caughtError)
+    }
   }
 
   function setAuthError(caughtError: unknown): void {
@@ -167,9 +213,11 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     authStatus,
     initialized,
+    localTransition,
     authLoading,
     operationLoading,
     error,
+    observerError,
     isAuthenticated,
     clearError,
     initialize,

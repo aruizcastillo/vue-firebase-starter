@@ -1,183 +1,210 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { FirebaseError } from 'firebase/app'
 import type { User } from 'firebase/auth'
+import type { Unsubscribe } from 'firebase/firestore'
 import { defineStore } from 'pinia'
 
-import { ensureUserProfile, setUserAccountStatus, updateUserProfile } from '@/services/profile.service'
-import type { UserAccountStatus, UserProfile } from '@/types/profile.types'
+import { observeUserProfile, reconcileUserProfile, setUserAccountStatus, updateUserProfile } from '@/services/profile.service'
+import type { ProfileConnectionState, UserAccountStatus, UserProfile } from '@/types/profile.types'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
 import { getProfileErrorMessage } from '@/utils/profile-errors'
 import { i18n } from '@/i18n'
 
 export const useProfileStore = defineStore('profile', () => {
   const profile = ref<UserProfile | null>(null)
-  const loading = ref(false)
-  const initialized = ref(false)
+  const connectionState = ref<ProfileConnectionState>('idle')
+  const connectionError = ref<string | null>(null)
+  const operationError = ref<string | null>(null)
   const updating = ref(false)
-  const error = ref<string | null>(null)
 
   let activeUserId: string | null = null
-  let stateVersion = 0
-  let synchronizationPromise: Promise<UserProfile> | null = null
-  let synchronizationUserId: string | null = null
+  let connectionGeneration = 0
+  let connectionPromise: Promise<boolean> | null = null
+  let connectionResolver: ((succeeded: boolean) => void) | null = null
+  let unsubscribe: Unsubscribe | null = null
 
-  async function synchronize(currentUser: User, force = false): Promise<boolean> {
-    const currentStateVersion = activateUser(currentUser.uid)
+  const loading = computed(() => connectionState.value === 'connecting')
 
-    if (!force && isCurrentState(currentUser.uid, currentStateVersion) && initialized.value) {
-      return profile.value !== null
+  function connect(currentUser: User): Promise<boolean> {
+    if (activeUserId === currentUser.uid && connectionState.value === 'ready' && profile.value) {
+      return Promise.resolve(true)
     }
 
-    if (isCurrentState(currentUser.uid, currentStateVersion)) {
-      loading.value = true
-      error.value = null
+    if (activeUserId === currentUser.uid && connectionPromise) {
+      return connectionPromise
     }
 
-    if (!synchronizationPromise || synchronizationUserId !== currentUser.uid) {
-      synchronizationUserId = currentUser.uid
-      synchronizationPromise = ensureUserProfile(currentUser)
-    }
+    disconnect()
 
-    const activeSynchronization = synchronizationPromise
+    activeUserId = currentUser.uid
+    const currentGeneration = ++connectionGeneration
+    connectionState.value = 'connecting'
+    connectionError.value = null
+    operationError.value = null
 
-    try {
-      const synchronizedProfile = await activeSynchronization
+    const activeConnection = establishConnection(currentUser, currentGeneration)
+    connectionPromise = activeConnection
 
-      if (isCurrentState(currentUser.uid, currentStateVersion)) {
-        profile.value = synchronizedProfile
+    void activeConnection.finally(() => {
+      if (connectionPromise === activeConnection) {
+        connectionPromise = null
       }
+    })
 
-      return true
+    return activeConnection
+  }
+
+  async function establishConnection(currentUser: User, currentGeneration: number): Promise<boolean> {
+    try {
+      await reconcileUserProfile(currentUser)
+
+      if (!isCurrentConnection(currentUser.uid, currentGeneration)) return false
+
+      return await waitForFirstSnapshot(currentUser.uid, currentGeneration)
     } catch (caughtError) {
-      if (isCurrentState(currentUser.uid, currentStateVersion)) {
-        profile.value = null
-        error.value = getProfileErrorMessage(caughtError)
+      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
+        failConnection(caughtError)
       }
 
       return false
-    } finally {
-      if (synchronizationPromise === activeSynchronization) {
-        synchronizationPromise = null
-        synchronizationUserId = null
-      }
-
-      if (isCurrentState(currentUser.uid, currentStateVersion)) {
-        loading.value = false
-        initialized.value = true
-      }
     }
   }
 
-  async function reload(currentUser: User | null): Promise<boolean> {
+  function waitForFirstSnapshot(userId: string, currentGeneration: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      let settled = false
+
+      connectionResolver = (succeeded) => {
+        if (settled) return
+        settled = true
+        connectionResolver = null
+        resolve(succeeded)
+      }
+
+      unsubscribe = observeUserProfile(
+        userId,
+        (observedProfile) => {
+          if (!isCurrentConnection(userId, currentGeneration)) return
+
+          if (!observedProfile) {
+            unsubscribe?.()
+            unsubscribe = null
+            failConnection(new Error('profile-creation-failed'))
+            connectionResolver?.(false)
+            return
+          }
+
+          profile.value = observedProfile
+          connectionState.value = 'ready'
+          connectionError.value = null
+          connectionResolver?.(true)
+        },
+        (caughtError) => {
+          if (!isCurrentConnection(userId, currentGeneration)) return
+
+          unsubscribe = null
+          failConnection(caughtError)
+          connectionResolver?.(false)
+        },
+      )
+    })
+  }
+
+  async function reconcile(currentUser: User | null): Promise<boolean> {
     if (!currentUser) {
-      error.value = i18n.global.t('errors.noAuthenticatedUser')
+      operationError.value = i18n.global.t('errors.noAuthenticatedUser')
       return false
     }
 
-    return synchronize(currentUser, true)
+    operationError.value = null
+
+    try {
+      await reconcileUserProfile(currentUser)
+      return true
+    } catch (caughtError) {
+      operationError.value = getProfileOperationErrorMessage(caughtError)
+      return false
+    }
   }
 
   async function update(currentUser: User | null, displayName: string): Promise<boolean> {
-    if (!currentUser) {
-      error.value = i18n.global.t('errors.noAuthenticatedUser')
+    if (!currentUser || activeUserId !== currentUser.uid) {
+      operationError.value = i18n.global.t('errors.noAuthenticatedUser')
       return false
     }
 
-    const currentStateVersion = activateUser(currentUser.uid)
-
+    const currentGeneration = connectionGeneration
     updating.value = true
-    error.value = null
+    operationError.value = null
 
     try {
-      const normalizedDisplayName = displayName.trim()
-
       await updateUserProfile(currentUser, {
-        displayName: normalizedDisplayName,
+        displayName: displayName.trim(),
       })
 
-      if (isCurrentState(currentUser.uid, currentStateVersion)) {
-        if (profile.value) {
-          profile.value = {
-            ...profile.value,
-            displayName: normalizedDisplayName,
-          }
-        }
-
-        void reload(currentUser)
-      }
-
-      return true
+      return isCurrentConnection(currentUser.uid, currentGeneration)
     } catch (caughtError) {
-      if (isCurrentState(currentUser.uid, currentStateVersion)) {
-        error.value = getProfileOperationErrorMessage(caughtError)
+      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
+        operationError.value = getProfileOperationErrorMessage(caughtError)
       }
 
       return false
     } finally {
-      if (isCurrentState(currentUser.uid, currentStateVersion)) {
+      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
         updating.value = false
       }
     }
   }
 
   async function updateStatus(currentUser: User | null, status: UserAccountStatus): Promise<boolean> {
-    if (!currentUser) {
-      error.value = i18n.global.t('errors.noAuthenticatedUser')
+    if (!currentUser || activeUserId !== currentUser.uid) {
+      operationError.value = i18n.global.t('errors.noAuthenticatedUser')
       return false
     }
 
-    const currentStateVersion = activateUser(currentUser.uid)
+    const currentGeneration = connectionGeneration
     updating.value = true
-    error.value = null
+    operationError.value = null
 
     try {
       await setUserAccountStatus(currentUser.uid, status)
-
-      if (isCurrentState(currentUser.uid, currentStateVersion) && profile.value) {
-        profile.value = { ...profile.value, status }
-      }
-
-      return true
+      return isCurrentConnection(currentUser.uid, currentGeneration)
     } catch (caughtError) {
-      if (isCurrentState(currentUser.uid, currentStateVersion)) {
-        error.value = getProfileOperationErrorMessage(caughtError)
+      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
+        operationError.value = getProfileOperationErrorMessage(caughtError)
       }
+
       return false
     } finally {
-      if (isCurrentState(currentUser.uid, currentStateVersion)) {
+      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
         updating.value = false
       }
     }
   }
 
-  function reset(): void {
-    ++stateVersion
+  function disconnect(): void {
+    ++connectionGeneration
+    unsubscribe?.()
+    unsubscribe = null
+    connectionResolver?.(false)
+    connectionResolver = null
+    connectionPromise = null
     activeUserId = null
-    synchronizationPromise = null
-    synchronizationUserId = null
     profile.value = null
-    loading.value = false
-    initialized.value = false
+    connectionState.value = 'idle'
+    connectionError.value = null
+    operationError.value = null
     updating.value = false
-    error.value = null
   }
 
-  function activateUser(userId: string): number {
-    if (activeUserId !== userId) {
-      ++stateVersion
-      activeUserId = userId
-      profile.value = null
-      loading.value = false
-      initialized.value = false
-      updating.value = false
-      error.value = null
-    }
-
-    return stateVersion
+  function failConnection(caughtError: unknown): void {
+    profile.value = null
+    connectionState.value = 'error'
+    connectionError.value = getProfileErrorMessage(caughtError)
   }
 
-  function isCurrentState(userId: string, currentStateVersion: number): boolean {
-    return activeUserId === userId && stateVersion === currentStateVersion
+  function isCurrentConnection(userId: string, currentGeneration: number): boolean {
+    return activeUserId === userId && connectionGeneration === currentGeneration
   }
 
   function getProfileOperationErrorMessage(caughtError: unknown): string {
@@ -190,14 +217,15 @@ export const useProfileStore = defineStore('profile', () => {
 
   return {
     profile,
+    connectionState,
+    connectionError,
+    operationError,
     loading,
-    initialized,
     updating,
-    error,
-    synchronize,
-    reload,
+    connect,
+    reconcile,
     update,
     updateStatus,
-    reset,
+    disconnect,
   }
 })

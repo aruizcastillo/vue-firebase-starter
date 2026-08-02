@@ -61,6 +61,12 @@
     "greeting": "Hola, {name}",
     "configured": "La autenticación y el perfil están configurados correctamente."
   },
+  "session": {
+    "restoringAuth": "Restaurando tu sesión…",
+    "loadingProfile": "Cargando tu perfil…",
+    "errorTitle": "No hemos podido iniciar tu sesión",
+    "errorDescription": "Comprueba tu conexión e inténtalo de nuevo, o cierra sesión."
+  },
   "auth": {
     "loginDescription": "Introduce tu información para iniciar sesión en tu cuenta.",
     "registerDescription": "Introduce tu información para registrarte.",

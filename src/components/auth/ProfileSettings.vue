@@ -56,16 +56,16 @@ async function handleSubmit(): Promise<void> {
             <FieldLabel for="display-name">{{ t('common.name') }}</FieldLabel>
             <Input id="display-name" v-model="displayName" type="text" autocomplete="name" maxlength="80" />
           </Field>
-          <FieldError v-if="validationError || profileStore.error" class="form-error">
-            {{ validationError ?? profileStore.error }}
+          <FieldError v-if="validationError || profileStore.operationError" class="form-error">
+            {{ validationError ?? profileStore.operationError }}
           </FieldError>
           <p v-if="saved" class="form-success text-sm">{{ t('profile.updated') }}</p>
         </FieldGroup>
       </form>
     </CardContent>
     <CardFooter class="flex flex-col gap-2">
-      <Button form="profile-settings-form" type="submit" class="w-full" :disabled="profileStore.updating || profileStore.loading || !profileStore.profile">
-        {{ profileStore.updating ? t('buttons.saving') : profileStore.loading ? t('profile.loading') : t('buttons.save') }}
+      <Button form="profile-settings-form" type="submit" class="w-full" :disabled="profileStore.updating || !profileStore.profile">
+        {{ profileStore.updating ? t('buttons.saving') : t('buttons.save') }}
       </Button>
     </CardFooter>
   </Card>

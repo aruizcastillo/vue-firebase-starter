@@ -1,28 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { RouterView } from 'vue-router'
 
-import { Spinner } from '@/components/ui/spinner'
-import { useAuthStore } from '@/stores/auth.store'
-import { useProfileStore } from '@/stores/profile.store'
+import SessionFeedbackOverlay from '@/components/SessionFeedbackOverlay.vue'
+import { useSessionStore } from '@/stores/session.store'
 
-const authStore = useAuthStore()
-const profileStore = useProfileStore()
-
-const appReady = computed(() => {
-  if (!authStore.initialized) return false
-  if (!authStore.user) return true
-
-  return profileStore.initialized
-})
+const sessionStore = useSessionStore()
 </script>
 
 <template>
-  <main v-if="!appReady" class="flex min-h-dvh items-center justify-center">
-    <Spinner class="size-6" />
-  </main>
+  <div :inert="sessionStore.isBlocking">
+    <RouterView />
+  </div>
 
-  <RouterView v-else />
+  <SessionFeedbackOverlay />
 </template>
-
-<style scoped></style>

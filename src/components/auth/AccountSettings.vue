@@ -79,7 +79,10 @@ async function refreshVerifiedEmail(): Promise<void> {
   emailChangeLoading.value = true
   try {
     await reloadAuthenticatedUser(user)
-    await profileStore.reload(user)
+    if (!(await profileStore.reconcile(user))) {
+      emailChangeError.value = profileStore.operationError ?? t('errors.operationFailed')
+      return
+    }
     emailChangeMessage.value = t('account.emailSynchronized')
   } catch (caughtError) {
     emailChangeError.value = getAuthErrorMessage(caughtError)
@@ -132,7 +135,7 @@ async function handleDeactivation(): Promise<void> {
   if (succeeded) {
     await authStore.signOut()
   } else {
-    deactivationError.value = profileStore.error ?? t('errors.accountDeactivationFailed')
+    deactivationError.value = profileStore.operationError ?? t('errors.accountDeactivationFailed')
   }
   deactivating.value = false
 }

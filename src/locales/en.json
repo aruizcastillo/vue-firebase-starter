@@ -61,6 +61,12 @@
     "greeting": "Hello, {name}",
     "configured": "The authentication and profile are configured correctly."
   },
+  "session": {
+    "restoringAuth": "Restoring your session…",
+    "loadingProfile": "Loading your profile…",
+    "errorTitle": "We could not start your session",
+    "errorDescription": "Check your connection and try again, or sign out."
+  },
   "auth": {
     "loginDescription": "Enter your information below to sign in to your account.",
     "registerDescription": "Enter your information below to create an account.",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
@@ -16,7 +16,7 @@ const router = useRouter()
 const { t } = useI18n()
 const error = ref<string | null>(null)
 const reactivating = ref(false)
-const isSuspended = profileStore.profile?.status === 'suspended'
+const isSuspended = computed(() => profileStore.profile?.status === 'suspended')
 
 async function reactivate(): Promise<void> {
   error.value = null
@@ -25,7 +25,7 @@ async function reactivate(): Promise<void> {
   if (succeeded) {
     await router.replace({ name: 'home' })
   } else {
-    error.value = profileStore.error ?? t('errors.accountReactivationFailed')
+    error.value = profileStore.operationError ?? t('errors.accountReactivationFailed')
   }
   reactivating.value = false
 }
