@@ -123,7 +123,7 @@ const EmailSchema = v.pipe(v.string(), v.trim(), v.nonEmpty(messages.emailRequir
 Reglas actuales:
 
 - Los emails se recortan antes de enviarse y se validan como obligatorios y con formato correcto.
-- El nombre de perfil se recorta y admite hasta 80 caracteres.
+- El nombre de perfil se recorta, admite hasta 80 caracteres y, si no está vacío, debe ser distinto al nombre actual.
 - Registro y cambio de contraseña validan confirmación mediante `v.partialCheck` y `v.forward`.
 - El cambio de correo valida que el nuevo correo no sea el actual.
 - La política de contraseñas de Firebase se mantiene como comprobación asíncrona: no forma parte del esquema y se asigna al campo con `setErrors`.

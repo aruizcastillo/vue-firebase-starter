@@ -18,7 +18,7 @@ import { toast } from 'vue-sonner'
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const { t } = useI18n()
-const profileSettingsSchema = createProfileSettingsSchema(t('errors.nameTooLong'))
+const profileSettingsSchema = createProfileSettingsSchema(t('errors.nameTooLong'), t('errors.nameUnchanged'), () => profileStore.profile?.displayName)
 const profileSettingsForm = useForm({
   schema: profileSettingsSchema,
   validate: 'submit',

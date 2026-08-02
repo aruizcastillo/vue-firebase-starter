@@ -155,6 +155,7 @@
     "profileNotFound": "No se ha encontrado el perfil de usuario.",
     "serviceNetwork": "No se ha podido conectar al servicio.",
     "nameTooLong": "El nombre no puede superar los 80 caracteres.",
+    "nameUnchanged": "Introduce un nombre diferente.",
     "newEmailRequired": "Introduce la nueva dirección de correo electrónico.",
     "newEmailUnchanged": "La nueva dirección de correo electrónico debe ser diferente.",
     "newPasswordRequired": "Introduce tu contraseña actual y una nueva contraseña.",
