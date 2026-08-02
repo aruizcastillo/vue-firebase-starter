@@ -18,8 +18,8 @@ const userLabel = computed(() => {
 
 <template>
   <PageContainer centered>
-    <h1>{{ t('home.greeting', { name: userLabel }) }}</h1>
+    <h1 class="text-3xl font-bold">{{ t('home.greeting', { name: userLabel }) }}</h1>
 
-    <p>{{ t('home.configured') }}</p>
+    <p class="text-muted-foreground">{{ t('home.configured') }}</p>
   </PageContainer>
 </template>
