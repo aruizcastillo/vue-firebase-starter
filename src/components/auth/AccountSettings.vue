@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Spinner } from '@/components/ui/spinner'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
@@ -166,6 +167,7 @@ async function handleDeactivation(): Promise<void> {
       </CardContent>
       <CardFooter class="flex flex-col gap-2">
         <Button form="change-email-form" type="submit" class="w-full" :disabled="emailChangeLoading">
+          <Spinner v-if="emailChangeLoading" />
           {{ emailChangeLoading ? t('buttons.requesting') : t('buttons.sendVerificationLink') }}
         </Button>
         <Button type="button" variant="outline" class="w-full" :disabled="emailChangeLoading" @click="refreshVerifiedEmail">
@@ -205,6 +207,7 @@ async function handleDeactivation(): Promise<void> {
       </CardContent>
       <CardFooter class="flex flex-col gap-2">
         <Button form="change-password-form" type="submit" class="w-full" :disabled="passwordChangeLoading">
+          <Spinner v-if="passwordChangeLoading" />
           {{ passwordChangeLoading ? t('buttons.changing') : t('buttons.changePassword') }}
         </Button>
       </CardFooter>
@@ -218,6 +221,7 @@ async function handleDeactivation(): Promise<void> {
       <CardContent class="flex flex-col gap-2">
         <FieldError v-if="deactivationError" class="form-error">{{ deactivationError }}</FieldError>
         <Button type="button" variant="destructive" class="w-full" :disabled="deactivating || profileStore.loading" @click="handleDeactivation">
+          <Spinner v-if="deactivating" />
           {{ deactivating ? t('buttons.deactivating') : t('buttons.deactivateAccount') }}
         </Button>
       </CardContent>

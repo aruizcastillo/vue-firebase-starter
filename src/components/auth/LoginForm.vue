@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardAction } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Spinner } from '@/components/ui/spinner'
 
 const emit = defineEmits<{ success: [] }>()
 const authStore = useAuthStore()
@@ -56,6 +57,7 @@ async function handleGoogleLogin(): Promise<void> {
     </CardContent>
     <CardFooter class="flex flex-col gap-2">
       <Button form="login-form" type="submit" class="w-full" :disabled="authStore.authStatus === 'authenticating'">
+        <Spinner v-if="authStore.authStatus === 'authenticating'" />
         {{ authStore.authStatus === 'authenticating' ? t('buttons.loggingIn') : t('buttons.login') }}
       </Button>
       <Button type="button" variant="outline" class="w-full" :disabled="authStore.authStatus === 'authenticating'" @click="handleGoogleLogin">

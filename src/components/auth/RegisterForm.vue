@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Spinner } from '@/components/ui/spinner'
 
 const emit = defineEmits<{
   success: []
@@ -111,6 +112,7 @@ async function handleGoogleRegistration(): Promise<void> {
     </CardContent>
     <CardFooter class="flex flex-col gap-2">
       <Button form="register-form" type="submit" class="w-full" :disabled="submitting">
+        <Spinner v-if="creatingAccount" />
         {{ checkingPassword ? t('buttons.checkingPassword') : creatingAccount ? t('buttons.creatingAccount') : t('navigation.createAccount') }}
       </Button>
       <Button type="button" variant="outline" class="w-full" :disabled="submitting" @click="handleGoogleRegistration">
