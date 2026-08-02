@@ -61,6 +61,12 @@
     "greeting": "Hola, {name}",
     "configured": "La autenticación y el perfil están configurados correctamente."
   },
+  "session": {
+    "restoringAuth": "Restaurando tu sesión…",
+    "loadingProfile": "Cargando tu perfil…",
+    "errorTitle": "No hemos podido iniciar tu sesión",
+    "errorDescription": "Comprueba tu conexión e inténtalo de nuevo, o cierra sesión."
+  },
   "auth": {
     "loginDescription": "Introduce tu información para iniciar sesión en tu cuenta.",
     "registerDescription": "Introduce tu información para registrarte.",
@@ -130,7 +136,9 @@
     "profileCreationFailed": "No se ha podido crear el perfil de usuario.",
     "noAuthenticatedUser": "No hay ningún usuario autenticado.",
     "emailAlreadyInUse": "Ya existe una cuenta con este correo electrónico.",
+    "emailRequired": "Introduce tu correo electrónico.",
     "invalidEmail": "El correo electrónico no es válido.",
+    "passwordRequired": "Introduce tu contraseña.",
     "invalidCredential": "El correo electrónico o la contraseña son incorrectos.",
     "weakPassword": "La contraseña debe tener al menos 6 caracteres.",
     "userDisabled": "Esta cuenta se ha deshabilitado.",
@@ -147,6 +155,7 @@
     "profileNotFound": "No se ha encontrado el perfil de usuario.",
     "serviceNetwork": "No se ha podido conectar al servicio.",
     "nameTooLong": "El nombre no puede superar los 80 caracteres.",
+    "nameUnchanged": "Introduce un nombre diferente.",
     "newEmailRequired": "Introduce la nueva dirección de correo electrónico.",
     "newEmailUnchanged": "La nueva dirección de correo electrónico debe ser diferente.",
     "newPasswordRequired": "Introduce tu contraseña actual y una nueva contraseña.",

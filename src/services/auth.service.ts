@@ -68,6 +68,6 @@ export function checkPasswordAgainstPolicy(password: string): Promise<PasswordVa
   return validatePassword(auth, password)
 }
 
-export function observeAuthState(callback: (user: User | null) => void): Unsubscribe {
-  return onAuthStateChanged(auth, callback)
+export function observeAuthState(callback: (user: User | null) => void, errorCallback: (error: Error) => void): Unsubscribe {
+  return onAuthStateChanged(auth, callback, errorCallback)
 }

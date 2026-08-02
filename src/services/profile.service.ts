@@ -1,5 +1,5 @@
 import { updateProfile as updateAuthProfile, type User } from 'firebase/auth'
-import { doc, getDoc, runTransaction, serverTimestamp, updateDoc, type QueryDocumentSnapshot } from 'firebase/firestore'
+import { doc, onSnapshot, runTransaction, serverTimestamp, updateDoc, type QueryDocumentSnapshot, type Unsubscribe } from 'firebase/firestore'
 
 import { db } from '@/firebase/firestore'
 
@@ -7,16 +7,6 @@ import type { UpdateUserProfileData, UserAccountStatus, UserProfile } from '@/ty
 
 function getUserReference(userId: string) {
   return doc(db, 'users', userId)
-}
-
-export async function getUserProfile(userId: string): Promise<UserProfile | null> {
-  const snapshot = await getDoc(getUserReference(userId))
-
-  if (!snapshot.exists()) {
-    return null
-  }
-
-  return mapUserProfile(snapshot)
 }
 
 function mapUserProfile(snapshot: QueryDocumentSnapshot): UserProfile {
@@ -33,7 +23,7 @@ function mapUserProfile(snapshot: QueryDocumentSnapshot): UserProfile {
   }
 }
 
-export async function ensureUserProfile(user: User): Promise<UserProfile> {
+export async function reconcileUserProfile(user: User): Promise<void> {
   const reference = getUserReference(user.uid)
 
   await runTransaction(db, async (transaction) => {
@@ -67,14 +57,10 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
       })
     }
   })
+}
 
-  const createdProfile = await getUserProfile(user.uid)
-
-  if (!createdProfile) {
-    throw new Error('profile-creation-failed')
-  }
-
-  return createdProfile
+export function observeUserProfile(userId: string, callback: (profile: UserProfile | null) => void, errorCallback: (error: Error) => void): Unsubscribe {
+  return onSnapshot(getUserReference(userId), (snapshot) => callback(snapshot.exists() ? mapUserProfile(snapshot) : null), errorCallback)
 }
 
 export async function setUserAccountStatus(userId: string, status: UserAccountStatus): Promise<void> {

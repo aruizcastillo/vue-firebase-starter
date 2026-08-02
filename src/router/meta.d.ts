@@ -6,6 +6,6 @@ declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
     guestOnly?: boolean
-    allowDeactivated?: boolean
+    allowRestrictedAccount?: boolean
   }
 }

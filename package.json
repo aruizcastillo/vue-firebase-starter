@@ -22,6 +22,7 @@
     "firebase:deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes"
   },
   "dependencies": {
+    "@formisch/vue": "1.0.0-rc.0",
     "@lucide/vue": "^1.27.0",
     "@tailwindcss/vite": "^4.3.3",
     "@vueuse/core": "^14.4.0",
@@ -32,9 +33,11 @@
     "reka-ui": "^2.10.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
+    "valibot": "^1.4.2",
     "vue": "^3.5.40",
     "vue-i18n": "^11.4.8",
-    "vue-router": "^5.2.0"
+    "vue-router": "^5.2.0",
+    "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
@@ -42,6 +45,7 @@
     "@types/node": "^24.13.3",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/eslint-config-typescript": "^14.9.0",
+    "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
@@ -49,6 +53,7 @@
     "eslint-plugin-vue": "~10.9.2",
     "firebase-tools": "^15.24.0",
     "jiti": "^2.7.0",
+    "jsdom": "^30.0.1",
     "npm-run-all2": "^9.0.2",
     "oxlint": "~1.74.0",
     "prettier": "3.9.5",

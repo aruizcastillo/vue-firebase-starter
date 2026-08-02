@@ -4,7 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const profileMocks = vi.hoisted(() => ({
-  ensureUserProfile: vi.fn(),
+  observeUserProfile: vi.fn(),
+  reconcileUserProfile: vi.fn(),
   setUserAccountStatus: vi.fn(),
   updateUserProfile: vi.fn(),
 }))
@@ -12,148 +13,171 @@ const profileMocks = vi.hoisted(() => ({
 vi.mock('@/services/profile.service', () => profileMocks)
 
 import { useProfileStore } from '@/stores/profile.store'
+import type { UserProfile } from '@/types/profile.types'
+
+interface ProfileListener {
+  next: (profile: UserProfile | null) => void
+  error: (error: Error) => void
+  unsubscribe: ReturnType<typeof vi.fn>
+}
+
+let listeners: ProfileListener[]
 
 describe('profile store', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     setActivePinia(createPinia())
+    listeners = []
+    profileMocks.reconcileUserProfile.mockResolvedValue(undefined)
+    profileMocks.observeUserProfile.mockImplementation((_userId, next, error) => {
+      const listener = { next, error, unsubscribe: vi.fn() }
+      listeners.push(listener)
+      return listener.unsubscribe
+    })
   })
 
-  it('synchronizes the active user profile', async () => {
+  it('reconciles and resolves after the first realtime snapshot', async () => {
     const store = useProfileStore()
     const user = createUser('alice')
-    const profile = createProfile(user)
+    const connection = store.connect(user)
 
-    profileMocks.ensureUserProfile.mockResolvedValue(profile)
+    expect(store.connectionState).toBe('connecting')
+    await waitForListener(0)
+    listeners[0]!.next(createProfile(user))
 
-    await expect(store.synchronize(user)).resolves.toBe(true)
-
-    expect(store.profile).toEqual(profile)
-    expect(store.loading).toBe(false)
-    expect(store.error).toBeNull()
+    await expect(connection).resolves.toBe(true)
+    expect(store.profile).toEqual(createProfile(user))
+    expect(store.connectionState).toBe('ready')
+    expect(store.connectionError).toBeNull()
   })
 
-  it('deduplicates concurrent synchronization for the same user', async () => {
+  it('deduplicates concurrent connections for the same user', async () => {
     const store = useProfileStore()
     const user = createUser('alice')
-    const deferredProfile = createDeferred<ReturnType<typeof createProfile>>()
+    const firstConnection = store.connect(user)
+    const secondConnection = store.connect(user)
 
-    profileMocks.ensureUserProfile.mockReturnValue(deferredProfile.promise)
+    await waitForListener(0)
+    expect(profileMocks.reconcileUserProfile).toHaveBeenCalledTimes(1)
+    expect(profileMocks.observeUserProfile).toHaveBeenCalledTimes(1)
 
-    const firstSynchronization = store.synchronize(user)
-    const secondSynchronization = store.synchronize(user)
-
-    expect(profileMocks.ensureUserProfile).toHaveBeenCalledTimes(1)
-
-    deferredProfile.resolve(createProfile(user))
-
-    await expect(Promise.all([firstSynchronization, secondSynchronization])).resolves.toEqual([true, true])
+    listeners[0]!.next(createProfile(user))
+    await expect(Promise.all([firstConnection, secondConnection])).resolves.toEqual([true, true])
   })
 
-  it('ignores synchronization results after reset', async () => {
+  it('exposes reconciliation failures as connection errors', async () => {
     const store = useProfileStore()
     const user = createUser('alice')
-    const deferredProfile = createDeferred<ReturnType<typeof createProfile>>()
+    profileMocks.reconcileUserProfile.mockRejectedValue(new Error('Firestore unavailable'))
 
-    profileMocks.ensureUserProfile.mockReturnValue(deferredProfile.promise)
-
-    const synchronization = store.synchronize(user)
-
-    store.reset()
-    deferredProfile.resolve(createProfile(user))
-    await synchronization
+    await expect(store.connect(user)).resolves.toBe(false)
 
     expect(store.profile).toBeNull()
-    expect(store.loading).toBe(false)
-    expect(store.error).toBeNull()
+    expect(store.connectionState).toBe('error')
+    expect(store.connectionError).toBe('The operation could not be completed.')
   })
 
-  it('keeps the new user profile when an old synchronization finishes later', async () => {
+  it('updates the profile from later snapshots', async () => {
+    const store = useProfileStore()
+    const user = createUser('alice')
+    await connectStore(store, user)
+
+    listeners[0]!.next({ ...createProfile(user), displayName: 'Updated externally' })
+
+    expect(store.profile?.displayName).toBe('Updated externally')
+  })
+
+  it('moves a ready connection to error if its listener fails', async () => {
+    const store = useProfileStore()
+    const user = createUser('alice')
+    await connectStore(store, user)
+
+    listeners[0]!.error(new FirebaseError('unavailable', 'Offline'))
+
+    expect(store.profile).toBeNull()
+    expect(store.connectionState).toBe('error')
+    expect(store.connectionError).toBe('The service is temporarily unavailable.')
+  })
+
+  it('unsubscribes and settles a pending connection on disconnect', async () => {
+    const store = useProfileStore()
+    const user = createUser('alice')
+    const connection = store.connect(user)
+    await waitForListener(0)
+
+    store.disconnect()
+
+    await expect(connection).resolves.toBe(false)
+    expect(listeners[0]!.unsubscribe).toHaveBeenCalledOnce()
+    expect(store.connectionState).toBe('idle')
+  })
+
+  it('ignores stale callbacks after switching users', async () => {
     const store = useProfileStore()
     const alice = createUser('alice')
     const bob = createUser('bob')
-    const deferredAliceProfile = createDeferred<ReturnType<typeof createProfile>>()
+    const aliceConnection = store.connect(alice)
+    await waitForListener(0)
 
-    profileMocks.ensureUserProfile.mockReturnValueOnce(deferredAliceProfile.promise).mockResolvedValueOnce(createProfile(bob))
+    const bobConnection = store.connect(bob)
+    await waitForListener(1)
+    listeners[0]!.next(createProfile(alice))
+    listeners[1]!.next(createProfile(bob))
 
-    const aliceSynchronization = store.synchronize(alice)
-    await store.synchronize(bob)
-
-    deferredAliceProfile.resolve(createProfile(alice))
-    await aliceSynchronization
-
+    await expect(aliceConnection).resolves.toBe(false)
+    await expect(bobConnection).resolves.toBe(true)
     expect(store.profile?.id).toBe('bob')
+    expect(listeners[0]!.unsubscribe).toHaveBeenCalledOnce()
   })
 
-  it('updates the profile and reconciles it again in the background', async () => {
+  it('updates a connected profile without reconnecting', async () => {
     const store = useProfileStore()
     const user = createUser('alice')
-
-    profileMocks.ensureUserProfile.mockResolvedValueOnce(createProfile(user)).mockResolvedValueOnce({
-      ...createProfile(user),
-      displayName: 'Updated name',
-    })
     profileMocks.updateUserProfile.mockResolvedValue(undefined)
+    await connectStore(store, user)
 
-    await store.synchronize(user)
     await expect(store.update(user, '  Updated name  ')).resolves.toBe(true)
 
-    expect(profileMocks.updateUserProfile).toHaveBeenCalledWith(user, {
-      displayName: 'Updated name',
-    })
-
-    await vi.waitFor(() => {
-      expect(store.profile?.displayName).toBe('Updated name')
-      expect(store.loading).toBe(false)
-    })
+    expect(profileMocks.updateUserProfile).toHaveBeenCalledWith(user, { displayName: 'Updated name' })
+    expect(profileMocks.reconcileUserProfile).toHaveBeenCalledTimes(1)
+    expect(profileMocks.observeUserProfile).toHaveBeenCalledTimes(1)
   })
 
-  it('does not restore profile state when an update finishes after reset', async () => {
+  it('maps operation errors independently from connection errors', async () => {
     const store = useProfileStore()
     const user = createUser('alice')
-    const deferredUpdate = createDeferred<void>()
-
-    profileMocks.ensureUserProfile.mockResolvedValue(createProfile(user))
-    profileMocks.updateUserProfile.mockReturnValue(deferredUpdate.promise)
-
-    await store.synchronize(user)
-    const update = store.update(user, 'Updated name')
-
-    store.reset()
-    deferredUpdate.resolve()
-    await update
-
-    expect(store.profile).toBeNull()
-    expect(store.error).toBeNull()
-    expect(store.updating).toBe(false)
-    expect(profileMocks.ensureUserProfile).toHaveBeenCalledTimes(1)
-  })
-
-  it('maps Firebase Auth failures raised while updating the profile', async () => {
-    const store = useProfileStore()
-    const user = createUser('alice')
-
-    profileMocks.updateUserProfile.mockRejectedValue(new FirebaseError('auth/network-request-failed', 'Network unavailable'))
+    await connectStore(store, user)
+    profileMocks.updateUserProfile.mockRejectedValue(new FirebaseError('auth/network-request-failed', 'Offline'))
 
     await expect(store.update(user, 'Alice')).resolves.toBe(false)
 
-    expect(store.error).toBe('Could not connect to the authentication service.')
-    expect(store.updating).toBe(false)
+    expect(store.connectionState).toBe('ready')
+    expect(store.connectionError).toBeNull()
+    expect(store.operationError).toBe('Could not connect to the authentication service.')
   })
 
-  it('updates the account status without changing profile identity fields', async () => {
+  it('updates account status through the active connection', async () => {
     const store = useProfileStore()
     const user = createUser('alice')
-    profileMocks.ensureUserProfile.mockResolvedValue(createProfile(user))
     profileMocks.setUserAccountStatus.mockResolvedValue(undefined)
+    await connectStore(store, user)
 
-    await store.synchronize(user)
     await expect(store.updateStatus(user, 'deactivated')).resolves.toBe(true)
 
     expect(profileMocks.setUserAccountStatus).toHaveBeenCalledWith('alice', 'deactivated')
-    expect(store.profile?.status).toBe('deactivated')
   })
 })
+
+async function connectStore(store: ReturnType<typeof useProfileStore>, user: User): Promise<void> {
+  const connection = store.connect(user)
+  await waitForListener(listeners.length)
+  listeners.at(-1)!.next(createProfile(user))
+  await connection
+}
+
+async function waitForListener(index: number): Promise<void> {
+  await vi.waitFor(() => expect(listeners[index]).toBeDefined())
+}
 
 function createUser(uid: string): User {
   return {
@@ -164,27 +188,14 @@ function createUser(uid: string): User {
   } as User
 }
 
-function createProfile(user: User) {
+function createProfile(user: User): UserProfile {
   return {
     id: user.uid,
     email: user.email,
     displayName: user.displayName ?? '',
     photoURL: user.photoURL,
-    status: 'active' as const,
+    status: 'active',
     createdAt: null,
     updatedAt: null,
-  }
-}
-
-function createDeferred<T>() {
-  let resolve!: (value: T) => void
-
-  const promise = new Promise<T>((promiseResolve) => {
-    resolve = promiseResolve
-  })
-
-  return {
-    promise,
-    resolve,
   }
 }

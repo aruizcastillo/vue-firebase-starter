@@ -25,7 +25,7 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/AuthLayout.vue'),
     meta: {
       requiresAuth: true,
-      allowDeactivated: true,
+      allowRestrictedAccount: true,
     },
     children: [
       {
@@ -34,6 +34,11 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/auth/AccountDeactivatedPage.vue'),
       },
     ],
+  },
+  {
+    path: '/session-error',
+    name: 'session-error',
+    component: () => import('@/pages/error/SessionErrorPage.vue'),
   },
   {
     path: '/welcome',
