@@ -14,126 +14,122 @@ const authMocks = vi.hoisted(() => ({
   resetPassword: vi.fn(),
 }))
 
-const profileMocks = vi.hoisted(() => ({
-  ensureUserProfile: vi.fn(),
-  setUserAccountStatus: vi.fn(),
-  updateUserProfile: vi.fn(),
-}))
-
 vi.mock('@/services/auth.service', () => authMocks)
-vi.mock('@/services/profile.service', () => profileMocks)
 
 import { useAuthStore } from '@/stores/auth.store'
-import { useProfileStore } from '@/stores/profile.store'
 
 type AuthStateCallback = (user: User | null) => void
+type AuthErrorCallback = (error: Error) => void
 
 let authStateCallback: AuthStateCallback
+let authErrorCallback: AuthErrorCallback
 
 describe('auth store', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     setActivePinia(createPinia())
 
-    authMocks.observeAuthState.mockImplementation((callback: AuthStateCallback) => {
+    authMocks.observeAuthState.mockImplementation((callback: AuthStateCallback, errorCallback: AuthErrorCallback) => {
       authStateCallback = callback
+      authErrorCallback = errorCallback
       return vi.fn()
     })
   })
 
-  it('restores the signed-out state before resolving initialization', async () => {
+  it('restores the signed-out state with one observer', async () => {
     const store = useAuthStore()
-    const initialization = store.initialize()
+    const firstInitialization = store.initialize()
+    const secondInitialization = store.initialize()
 
     expect(store.authStatus).toBe('restoring')
+    expect(authMocks.observeAuthState).toHaveBeenCalledTimes(1)
 
     authStateCallback(null)
-    await initialization
+    await Promise.all([firstInitialization, secondInitialization])
 
     expect(store.initialized).toBe(true)
     expect(store.authStatus).toBe('unauthenticated')
     expect(store.isAuthenticated).toBe(false)
   })
 
-  it('reports authentication success independently from profile loading', async () => {
+  it('reports observer errors and allows initialization to retry', async () => {
+    const store = useAuthStore()
+    const initialization = store.initialize()
+    const error = new FirebaseError('auth/network-request-failed', 'Offline')
+    const firstUnsubscribe = authMocks.observeAuthState.mock.results[0]?.value
+
+    authErrorCallback(error)
+
+    await expect(initialization).rejects.toBe(error)
+    expect(firstUnsubscribe).toHaveBeenCalledOnce()
+    expect(store.initialized).toBe(false)
+    expect(store.observerError).toBe('Could not connect to the authentication service.')
+
+    const retry = store.initialize()
+    expect(authMocks.observeAuthState).toHaveBeenCalledTimes(2)
+    authStateCallback(null)
+    await retry
+  })
+
+  it('tracks a local authentication transition without profile coupling', async () => {
     const store = await initializeSignedOutStore()
-    const profileStore = useProfileStore()
     const user = createUser('email-user')
+    const credential = createDeferred<UserCredential>()
+    authMocks.loginWithEmail.mockReturnValue(credential.promise)
 
-    authMocks.loginWithEmail.mockResolvedValue(createCredential(user))
-    profileMocks.ensureUserProfile.mockRejectedValue(new Error('Firestore unavailable'))
+    const login = store.login(user.email ?? '', 'password')
 
-    await expect(store.login(user.email ?? '', 'password')).resolves.toBe(true)
+    expect(store.localTransition).toBe(true)
+    expect(store.authStatus).toBe('authenticating')
+
+    credential.resolve(createCredential(user))
+    await Promise.resolve()
+
+    expect(store.user).toBeNull()
+    expect(store.localTransition).toBe(true)
 
     authStateCallback(user)
+    await expect(login).resolves.toBe(true)
 
-    await vi.waitFor(() => {
-      expect(profileStore.error).toBe('The operation could not be completed.')
-    })
-
-    expect(store.isAuthenticated).toBe(true)
-    expect(store.error).toBeNull()
-    expect(profileStore.profile).toBeNull()
-  })
-
-  it('does not expose a profile synchronization failure as a Google login error', async () => {
-    const store = await initializeSignedOutStore()
-    const profileStore = useProfileStore()
-    const user = createUser('google-user')
-
-    profileMocks.ensureUserProfile.mockRejectedValue(new Error('Temporary profile failure'))
-    authMocks.loginWithGoogle.mockImplementation(async () => {
-      authStateCallback(user)
-      return createCredential(user)
-    })
-
-    await expect(store.googleLogin()).resolves.toBe(true)
-
-    await vi.waitFor(() => {
-      expect(profileStore.loading).toBe(false)
-    })
-
+    expect(store.localTransition).toBe(false)
+    expect(store.user).toBe(user)
     expect(store.authStatus).toBe('authenticated')
-    expect(store.error).toBeNull()
-    expect(profileStore.error).toBe('The operation could not be completed.')
   })
 
-  it('keeps the Firebase user outside deep Vue reactivity', async () => {
+  it('uses the observer as the source for an opaque Firebase user', async () => {
     const store = await initializeSignedOutStore()
     const user = createUser('opaque-user')
-
     authMocks.loginWithGoogle.mockResolvedValue(createCredential(user))
 
-    await store.googleLogin()
+    const login = store.googleLogin()
+    authStateCallback(user)
+    await login
 
     expect(store.user).toBe(user)
     expect(isReactive(store.user)).toBe(false)
   })
 
-  it('ignores a completed profile request after signing out', async () => {
+  it('clears the current user after a local sign out', async () => {
     const store = await initializeSignedOutStore()
-    const profileStore = useProfileStore()
-    const user = createUser('stale-user')
-    const deferredProfile = createDeferred<ReturnType<typeof createProfile>>()
+    const user = createUser('signed-in-user')
+    authMocks.loginWithEmail.mockResolvedValue(createCredential(user))
+    authMocks.logout.mockResolvedValue(undefined)
 
-    profileMocks.ensureUserProfile.mockReturnValue(deferredProfile.promise)
-
+    const login = store.login(user.email ?? '', 'password')
     authStateCallback(user)
+    await login
+
+    const signOut = store.signOut()
     authStateCallback(null)
-    deferredProfile.resolve(createProfile(user))
+    await expect(signOut).resolves.toBe(true)
 
-    await deferredProfile.promise
-    await Promise.resolve()
-
-    expect(store.isAuthenticated).toBe(false)
-    expect(profileStore.profile).toBeNull()
-    expect(profileStore.error).toBeNull()
+    expect(store.user).toBeNull()
+    expect(store.localTransition).toBe(false)
     expect(store.authStatus).toBe('unauthenticated')
   })
 
   it('returns a neutral success for an unknown password-reset email', async () => {
     const store = await initializeSignedOutStore()
-
     authMocks.resetPassword.mockRejectedValue(new FirebaseError('auth/user-not-found', 'Unknown user'))
 
     await expect(store.sendPasswordReset('missing@example.com')).resolves.toBe(true)
@@ -143,7 +139,6 @@ describe('auth store', () => {
   it('returns the password policy reported by Firebase', async () => {
     const store = await initializeSignedOutStore()
     const status = createPasswordStatus()
-
     authMocks.checkPasswordAgainstPolicy.mockResolvedValue(status)
 
     await expect(store.validateRegistrationPassword('ValidPassword1!')).resolves.toBe(status)
@@ -154,10 +149,8 @@ describe('auth store', () => {
 async function initializeSignedOutStore() {
   const store = useAuthStore()
   const initialization = store.initialize()
-
   authStateCallback(null)
   await initialization
-
   return store
 }
 
@@ -171,21 +164,7 @@ function createUser(uid: string): User {
 }
 
 function createCredential(user: User): UserCredential {
-  return {
-    user,
-  } as UserCredential
-}
-
-function createProfile(user: User) {
-  return {
-    id: user.uid,
-    email: user.email,
-    displayName: user.displayName ?? '',
-    photoURL: user.photoURL,
-    status: 'active' as const,
-    createdAt: null,
-    updatedAt: null,
-  }
+  return { user } as UserCredential
 }
 
 function createPasswordStatus(): PasswordValidationStatus {
@@ -193,9 +172,7 @@ function createPasswordStatus(): PasswordValidationStatus {
     isValid: true,
     passwordPolicy: {
       allowedNonAlphanumericCharacters: '!@#',
-      customStrengthOptions: {
-        minPasswordLength: 8,
-      },
+      customStrengthOptions: { minPasswordLength: 8 },
       enforcementState: 'ENFORCE',
       forceUpgradeOnSignin: false,
     },
@@ -204,13 +181,8 @@ function createPasswordStatus(): PasswordValidationStatus {
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void
-
   const promise = new Promise<T>((promiseResolve) => {
     resolve = promiseResolve
   })
-
-  return {
-    promise,
-    resolve,
-  }
+  return { promise, resolve }
 }

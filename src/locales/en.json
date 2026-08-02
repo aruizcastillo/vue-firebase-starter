@@ -61,6 +61,12 @@
     "greeting": "Hello, {name}",
     "configured": "The authentication and profile are configured correctly."
   },
+  "session": {
+    "restoringAuth": "Restoring your session…",
+    "loadingProfile": "Loading your profile…",
+    "errorTitle": "We could not start your session",
+    "errorDescription": "Check your connection and try again, or sign out."
+  },
   "auth": {
     "loginDescription": "Enter your information below to sign in to your account.",
     "registerDescription": "Enter your information below to create an account.",
@@ -130,7 +136,9 @@
     "profileCreationFailed": "The user profile could not be created.",
     "noAuthenticatedUser": "No authenticated user.",
     "emailAlreadyInUse": "An account already exists with this email address.",
+    "emailRequired": "Enter your email address.",
     "invalidEmail": "The email address is not valid.",
+    "passwordRequired": "Enter your password.",
     "invalidCredential": "The email address or password is incorrect.",
     "weakPassword": "The password must be at least 6 characters long.",
     "userDisabled": "This account has been disabled.",
@@ -147,6 +155,7 @@
     "profileNotFound": "The user profile could not be found.",
     "serviceNetwork": "Could not connect to the service.",
     "nameTooLong": "The name cannot exceed 80 characters.",
+    "nameUnchanged": "Enter a different name.",
     "newEmailRequired": "Enter the new email address.",
     "newEmailUnchanged": "The new email address must be different.",
     "newPasswordRequired": "Enter your current password and a new password.",
