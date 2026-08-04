@@ -12,12 +12,24 @@ describe('session routing policy', () => {
     ['suspended protected page', route('home', '/', { requiresAuth: true }), true, 'suspended', 'account-deactivated'],
     ['active recovery page', route('account-deactivated', '/account-deactivated', { requiresAuth: true, allowRestrictedAccount: true }), true, 'active', 'home'],
   ])('%s', (_label, to, authenticated, accountStatus, expectedRoute) => {
-    const redirect = getSessionRedirect(to, { authenticated, accountStatus })
+    const redirect = getSessionRedirect(to, { authenticated, accountStatus }, { requiresAccountStatus: true })
     expect(typeof redirect === 'object' && 'name' in redirect ? redirect.name : null).toBe(expectedRoute)
   })
 
   it('allows a restricted account to enter its recovery page', () => {
-    const redirect = getSessionRedirect(route('account-deactivated', '/account-deactivated', { requiresAuth: true, allowRestrictedAccount: true }), { authenticated: true, accountStatus: 'deactivated' })
+    const redirect = getSessionRedirect(route('account-deactivated', '/account-deactivated', { requiresAuth: true, allowRestrictedAccount: true }), { authenticated: true, accountStatus: 'deactivated' }, { requiresAccountStatus: true })
+
+    expect(redirect).toBeUndefined()
+  })
+
+  it.each(['deactivated', 'suspended'] as const)('ignores %s status when account status is disabled', (accountStatus) => {
+    const redirect = getSessionRedirect(route('home', '/', { requiresAuth: true }), { authenticated: true, accountStatus }, { requiresAccountStatus: false })
+
+    expect(redirect).toBeUndefined()
+  })
+
+  it('does not apply restricted-page policy when account status is disabled', () => {
+    const redirect = getSessionRedirect(route('account-deactivated', '/account-deactivated', { requiresAuth: true, allowRestrictedAccount: true }), { authenticated: true, accountStatus: 'active' }, { requiresAccountStatus: false })
 
     expect(redirect).toBeUndefined()
   })

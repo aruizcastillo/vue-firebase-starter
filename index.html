@@ -1,10 +1,28 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Reusable Vue SPA starter with Firebase Authentication and Cloud Firestore." />
     <title>Vue + Firebase Starter</title>
+    <script>
+      ;(() => {
+        let storedTheme = null
+
+        try {
+          storedTheme = localStorage.getItem('theme')
+        } catch {
+          // Storage can be unavailable in private browsing contexts.
+        }
+
+        const theme = ['system', 'light', 'dark'].includes(storedTheme) ? storedTheme : 'system'
+        const systemTheme = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        const resolvedTheme = theme === 'system' ? systemTheme : theme
+
+        document.documentElement.dataset.theme = resolvedTheme
+        document.documentElement.style.colorScheme = resolvedTheme
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -9,15 +9,21 @@ const authMocks = vi.hoisted(() => ({
   loginWithGoogle: vi.fn(),
   logout: vi.fn(),
   observeAuthState: vi.fn(),
+  reloadAuthenticatedUser: vi.fn(),
   registerWithEmail: vi.fn(),
   resetPassword: vi.fn(),
+  updateAuthenticatedUserDisplayName: vi.fn(),
 }))
 
 const profileMocks = vi.hoisted(() => ({
   observeUserProfile: vi.fn(),
-  reconcileUserProfile: vi.fn(),
+  ensureUserProfile: vi.fn(),
+  getUserProfile: vi.fn(),
   setUserAccountStatus: vi.fn(),
-  updateUserProfile: vi.fn(),
+}))
+
+vi.mock('@/config/auth.config', () => ({
+  authConfig: { requiresProfile: true, requiresAccountStatus: true },
 }))
 
 vi.mock('@/services/auth.service', () => authMocks)
@@ -38,7 +44,7 @@ describe('external session reconciliation', () => {
       authStateCallback = callback
       return vi.fn()
     })
-    profileMocks.reconcileUserProfile.mockResolvedValue(undefined)
+    profileMocks.ensureUserProfile.mockResolvedValue(undefined)
     profileMocks.observeUserProfile.mockImplementation((_userId, next, error) => {
       profileNext = next
       profileError = error
@@ -120,9 +126,6 @@ function createUser(uid: string): User {
 function createProfile(user: User): UserProfile {
   return {
     id: user.uid,
-    email: user.email,
-    displayName: user.displayName ?? '',
-    photoURL: user.photoURL,
     status: 'active',
     createdAt: null,
     updatedAt: null,

@@ -12,15 +12,17 @@ vi.mock('@/services/auth.service', () => ({
   loginWithGoogle: vi.fn(),
   logout: vi.fn(),
   observeAuthState: vi.fn(),
+  reloadAuthenticatedUser: vi.fn(),
   registerWithEmail: vi.fn(),
   resetPassword: vi.fn(),
+  updateAuthenticatedUserDisplayName: vi.fn(),
 }))
 
 vi.mock('@/services/profile.service', () => ({
   observeUserProfile: vi.fn(),
-  reconcileUserProfile: vi.fn(),
+  ensureUserProfile: vi.fn(),
+  getUserProfile: vi.fn(),
   setUserAccountStatus: vi.fn(),
-  updateUserProfile: vi.fn(),
 }))
 
 describe('application session feedback', () => {

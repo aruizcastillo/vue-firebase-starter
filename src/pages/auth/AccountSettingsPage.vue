@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 
 import AccountSettings from '@/components/auth/AccountSettings.vue'
-import ProfileSettings from '@/components/auth/ProfileSettings.vue'
+import IdentitySettings from '@/components/auth/IdentitySettings.vue'
 
 import { PageContainer } from '@/components/ui/page'
 
@@ -15,7 +15,7 @@ const { t } = useI18n()
       <h1 class="text-xl font-bold">{{ t('account.settings') }}</h1>
     </div>
 
-    <ProfileSettings class="w-full max-w-md" />
+    <IdentitySettings class="w-full max-w-md" />
     <AccountSettings class="w-full max-w-md" />
   </PageContainer>
 </template>

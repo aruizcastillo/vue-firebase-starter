@@ -1,4 +1,4 @@
-import { GoogleAuthProvider, createUserWithEmailAndPassword, EmailAuthProvider, onAuthStateChanged, reauthenticateWithCredential, reauthenticateWithPopup, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, verifyBeforeUpdateEmail, validatePassword, type PasswordValidationStatus, type Unsubscribe, type User, type UserCredential } from 'firebase/auth'
+import { GoogleAuthProvider, createUserWithEmailAndPassword, EmailAuthProvider, onAuthStateChanged, reauthenticateWithCredential, reauthenticateWithPopup, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, updatePassword, updateProfile, verifyBeforeUpdateEmail, validatePassword, type PasswordValidationStatus, type Unsubscribe, type User, type UserCredential } from 'firebase/auth'
 
 import { auth } from '@/firebase/auth'
 import { useFirebaseEmulators } from '@/firebase/config'
@@ -57,6 +57,10 @@ export async function changePassword(user: User, currentPassword: string, newPas
 export async function reloadAuthenticatedUser(user: User): Promise<void> {
   await user.reload()
   await user.getIdToken(true)
+}
+
+export function updateAuthenticatedUserDisplayName(user: User, displayName: string): Promise<void> {
+  return updateProfile(user, { displayName })
 }
 
 export function checkPasswordAgainstPolicy(password: string): Promise<PasswordValidationStatus> {

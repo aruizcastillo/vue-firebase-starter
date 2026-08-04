@@ -6,14 +6,7 @@ export type ProfileConnectionState = 'idle' | 'connecting' | 'ready' | 'error'
 
 export interface UserProfile {
   id: string
-  email: string | null
-  displayName: string
-  photoURL: string | null
-  status: UserAccountStatus
+  status: UserAccountStatus | null
   createdAt: Timestamp | null
   updatedAt: Timestamp | null
-}
-
-export interface UpdateUserProfileData {
-  displayName: string
 }

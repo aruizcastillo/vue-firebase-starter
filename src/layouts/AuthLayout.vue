@@ -5,10 +5,10 @@ import AppHeader from '@/components/AppHeader.vue'
 </script>
 
 <template>
-  <div class="auth-layout">
+  <div>
     <AppHeader />
 
-    <main class="auth-content">
+    <main>
       <RouterView />
     </main>
   </div>

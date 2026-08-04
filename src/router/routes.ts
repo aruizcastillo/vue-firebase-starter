@@ -1,5 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router'
 
+import { authConfig } from '@/config/auth.config'
+
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -20,21 +22,25 @@ export const routes: RouteRecordRaw[] = [
       },
     ],
   },
-  {
-    path: '/account-deactivated',
-    component: () => import('@/layouts/AuthLayout.vue'),
-    meta: {
-      requiresAuth: true,
-      allowRestrictedAccount: true,
-    },
-    children: [
-      {
-        path: '',
-        name: 'account-deactivated',
-        component: () => import('@/pages/auth/AccountDeactivatedPage.vue'),
-      },
-    ],
-  },
+  ...(authConfig.requiresAccountStatus
+    ? [
+        {
+          path: '/account-deactivated',
+          component: () => import('@/layouts/AuthLayout.vue'),
+          meta: {
+            requiresAuth: true,
+            allowRestrictedAccount: true,
+          },
+          children: [
+            {
+              path: '',
+              name: 'account-deactivated',
+              component: () => import('@/pages/auth/AccountDeactivatedPage.vue'),
+            },
+          ],
+        },
+      ]
+    : []),
   {
     path: '/session-error',
     name: 'session-error',

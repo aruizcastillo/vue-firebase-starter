@@ -2,6 +2,7 @@ import { watch } from 'vue'
 import type { Pinia } from 'pinia'
 import type { RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router'
 
+import { authConfig } from '@/config/auth.config'
 import { getSafeRedirect, getSessionRedirect } from '@/router/session-policy'
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
@@ -63,25 +64,29 @@ export function registerSessionReconciliation(router: Router, pinia: Pinia): voi
     { flush: 'sync' },
   )
 
-  watch(
-    () => profileStore.profile?.status ?? null,
-    async (accountStatus, previousAccountStatus) => {
-      if (!accountStatus || !previousAccountStatus || accountStatus === previousAccountStatus || !router.currentRoute.value.name) return
+  if (authConfig.requiresAccountStatus) {
+    watch(
+      () => profileStore.profile?.status ?? null,
+      async (accountStatus, previousAccountStatus) => {
+        if (!accountStatus || !previousAccountStatus || accountStatus === previousAccountStatus || !router.currentRoute.value.name) return
 
-      const redirect = getPolicyRedirect(router.currentRoute.value, authStore, profileStore)
-      if (redirect) await router.replace(redirect)
-    },
-  )
+        const redirect = getPolicyRedirect(router.currentRoute.value, authStore, profileStore)
+        if (redirect) await router.replace(redirect)
+      },
+    )
+  }
 
-  watch(
-    () => profileStore.connectionState,
-    async (connectionState, previousConnectionState) => {
-      if (connectionState !== 'error' || previousConnectionState !== 'ready' || !router.currentRoute.value.name) return
+  if (authConfig.requiresAccountStatus) {
+    watch(
+      () => profileStore.connectionState,
+      async (connectionState, previousConnectionState) => {
+        if (connectionState !== 'error' || previousConnectionState !== 'ready' || !router.currentRoute.value.name) return
 
-      const currentRoute = router.currentRoute.value
-      if (currentRoute.name !== 'session-error') {
-        await router.replace(getSessionErrorRedirect(currentRoute))
-      }
-    },
-  )
+        const currentRoute = router.currentRoute.value
+        if (currentRoute.name !== 'session-error') {
+          await router.replace(getSessionErrorRedirect(currentRoute))
+        }
+      },
+    )
+  }
 }

@@ -10,8 +10,10 @@ const authMocks = vi.hoisted(() => ({
   loginWithGoogle: vi.fn(),
   logout: vi.fn(),
   observeAuthState: vi.fn(),
+  reloadAuthenticatedUser: vi.fn(),
   registerWithEmail: vi.fn(),
   resetPassword: vi.fn(),
+  updateAuthenticatedUserDisplayName: vi.fn(),
 }))
 
 vi.mock('@/services/auth.service', () => authMocks)
@@ -143,6 +145,37 @@ describe('auth store', () => {
 
     await expect(store.validateRegistrationPassword('ValidPassword1!')).resolves.toBe(status)
     expect(store.error).toBeNull()
+  })
+
+  it('updates the Auth display name without a Firestore dependency', async () => {
+    const store = useAuthStore()
+    const initialization = store.initialize()
+    const user = createUser('alice')
+    authStateCallback(user)
+    await initialization
+    authMocks.updateAuthenticatedUserDisplayName.mockImplementation(async (currentUser: User, displayName: string) => {
+      Object.assign(currentUser, { displayName })
+    })
+
+    await expect(store.updateDisplayName('  Updated name  ')).resolves.toBe(true)
+
+    expect(authMocks.updateAuthenticatedUserDisplayName).toHaveBeenCalledWith(user, 'Updated name')
+    expect(store.user?.displayName).toBe('Updated name')
+    expect(store.identityUpdating).toBe(false)
+  })
+
+  it('reloads the Auth user and exposes the refreshed opaque object', async () => {
+    const store = useAuthStore()
+    const initialization = store.initialize()
+    const user = createUser('alice')
+    authStateCallback(user)
+    await initialization
+    authMocks.reloadAuthenticatedUser.mockImplementation(async (currentUser: User) => {
+      Object.assign(currentUser, { email: 'updated@example.com' })
+    })
+
+    await expect(store.refreshUser()).resolves.toBe(true)
+    expect(store.user?.email).toBe('updated@example.com')
   })
 })
 

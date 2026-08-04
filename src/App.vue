@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 
-import SessionFeedbackOverlay from '@/components/SessionFeedbackOverlay.vue'
+import SessionFeedbackOverlay from '@/components/auth/SessionFeedbackOverlay.vue'
 import { useSessionStore } from '@/stores/session.store'
 
 import 'vue-sonner/style.css'

@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-export function createProfileSettingsSchema(nameTooLongMessage: string, nameUnchangedMessage: string, getCurrentDisplayName: () => string | null | undefined) {
+export function createIdentitySettingsSchema(nameTooLongMessage: string, nameUnchangedMessage: string, getCurrentDisplayName: () => string | null | undefined) {
   return v.object({
     displayName: v.pipe(
       v.string(),

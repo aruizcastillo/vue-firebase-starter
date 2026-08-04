@@ -4,9 +4,8 @@ import type { SubmitHandler } from '@formisch/vue'
 import { watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { createIdentitySettingsSchema } from '@/schemas/identity-settings.schema'
 import { useAuthStore } from '@/stores/auth.store'
-import { useProfileStore } from '@/stores/profile.store'
-import { createProfileSettingsSchema } from '@/schemas/profile-settings.schema'
 import { getFormischInputProps } from '@/utils/formisch-input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,67 +15,66 @@ import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'vue-sonner'
 
 const authStore = useAuthStore()
-const profileStore = useProfileStore()
 const { t } = useI18n()
-const profileSettingsSchema = createProfileSettingsSchema(t('errors.nameTooLong'), t('errors.nameUnchanged'), () => profileStore.profile?.displayName)
-const profileSettingsForm = useForm({
-  schema: profileSettingsSchema,
+const identitySettingsSchema = createIdentitySettingsSchema(t('errors.nameTooLong'), t('errors.nameUnchanged'), () => authStore.user?.displayName)
+const identitySettingsForm = useForm({
+  schema: identitySettingsSchema,
   validate: 'submit',
   revalidate: 'input',
 })
 
 watch(
-  () => profileStore.profile?.displayName,
+  () => authStore.user?.displayName,
   (currentDisplayName) => {
-    reset(profileSettingsForm, {
+    reset(identitySettingsForm, {
       initialInput: { displayName: currentDisplayName ?? '' },
     })
   },
   { immediate: true },
 )
 
-const handleSubmit: SubmitHandler<typeof profileSettingsSchema> = async ({ displayName }) => {
-  setErrors(profileSettingsForm, { errors: null })
+const handleSubmit: SubmitHandler<typeof identitySettingsSchema> = async ({ displayName }) => {
+  setErrors(identitySettingsForm, { errors: null })
 
-  const updated = await profileStore.update(authStore.user, displayName)
+  const updated = await authStore.updateDisplayName(displayName)
 
   if (updated) {
-    toast.success(t('profile.updated'))
+    toast.success(t('identity.updated'))
   } else {
-    const errorMessage = profileStore.operationError ?? t('errors.operationFailed')
-    setErrors(profileSettingsForm, { errors: [errorMessage] })
+    const errorMessage = authStore.error ?? t('errors.operationFailed')
+    setErrors(identitySettingsForm, { errors: [errorMessage] })
     toast.error(errorMessage)
   }
 }
 </script>
 
 <template>
-  <Card aria-labelledby="profile-settings-heading">
+  <Card aria-labelledby="identity-settings-heading">
     <CardHeader class="flex flex-col">
-      <CardTitle id="profile-settings-heading" class="text-xl font-bold">{{ t('profile.settings') }}</CardTitle>
+      <CardTitle id="identity-settings-heading" class="text-xl font-bold">{{ t('identity.settings') }}</CardTitle>
     </CardHeader>
     <CardContent>
-      <Form id="profile-settings-form" :of="profileSettingsForm" @submit="handleSubmit">
+      <Form id="identity-settings-form" :of="identitySettingsForm" @submit="handleSubmit">
         <FieldGroup class="grid w-full items-center gap-4">
           <Field class="flex flex-col" data-disabled>
-            <FieldLabel for="profile-email">{{ t('common.email') }}</FieldLabel>
-            <Input id="profile-email" :model-value="profileStore.profile?.email ?? ''" type="email" disabled />
+            <FieldLabel for="identity-email">{{ t('common.email') }}</FieldLabel>
+            <Input id="identity-email" :model-value="authStore.user?.email ?? ''" type="email" disabled />
           </Field>
-          <FormischField :of="profileSettingsForm" :path="['displayName']" v-slot="formField">
+          <FormischField :of="identitySettingsForm" :path="['displayName']" v-slot="formField">
             <Field class="flex flex-col" :data-invalid="Boolean(formField.errors)">
               <FieldLabel for="display-name">{{ t('common.name') }}</FieldLabel>
               <Input id="display-name" v-model="formField.input" v-bind="getFormischInputProps(formField.props)" :input-ref="formField.props.ref" :aria-invalid="formField.errors ? true : undefined" type="text" autocomplete="name" maxlength="80" />
               <FieldError v-if="formField.errors" :errors="formField.errors" class="form-error" />
             </Field>
           </FormischField>
-          <FieldError v-if="profileSettingsForm.errors" :errors="profileSettingsForm.errors" class="form-error" />
+          <FieldError v-if="identitySettingsForm.errors" :errors="identitySettingsForm.errors" class="form-error" />
         </FieldGroup>
       </Form>
     </CardContent>
     <CardFooter class="flex flex-col gap-2">
-      <Button form="profile-settings-form" type="submit" class="w-full" :disabled="profileStore.updating || profileSettingsForm.isSubmitting || !profileStore.profile">
-        <Spinner v-if="profileStore.updating" />
-        {{ profileStore.updating ? t('buttons.saving') : t('buttons.save') }}
+      <Button form="identity-settings-form" type="submit" class="w-full" :disabled="authStore.identityUpdating || identitySettingsForm.isSubmitting || !authStore.user">
+        <Spinner v-if="authStore.identityUpdating" data-icon="inline-start" />
+        {{ authStore.identityUpdating ? t('buttons.saving') : t('buttons.save') }}
       </Button>
     </CardFooter>
   </Card>

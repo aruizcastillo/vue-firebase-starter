@@ -31,13 +31,13 @@ Field / FieldError ◄──── resultados ◄──── esquema Valibot
 
 Las piezas compartidas están aquí:
 
-| Ubicación                                | Contenido                                                                            |
-| ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| `src/schemas/auth-forms.schema.ts`       | Esquemas de inicio de sesión, registro, recuperación, cambio de correo y contraseña. |
-| `src/schemas/profile-settings.schema.ts` | Esquema del nombre de perfil.                                                        |
-| `src/utils/formisch-input.ts`            | Adaptador que evita registrar como referencia la instancia Vue de `Input`.           |
-| `src/components/ui/input/Input.vue`      | Acepta `inputRef` y la conecta con el `<input>` nativo.                              |
-| `tests/formisch-input.spec.ts`           | Prueba de la referencia nativa para el enfoque automático de Formisch.               |
+| Ubicación                                 | Contenido                                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| `src/schemas/auth-forms.schema.ts`        | Esquemas de inicio de sesión, registro, recuperación, cambio de correo y contraseña. |
+| `src/schemas/identity-settings.schema.ts` | Esquema del nombre visible de Firebase Auth.                                         |
+| `src/utils/formisch-input.ts`             | Adaptador que evita registrar como referencia la instancia Vue de `Input`.           |
+| `src/components/ui/input/Input.vue`       | Acepta `inputRef` y la conecta con el `<input>` nativo.                              |
+| `tests/formisch-input.spec.ts`            | Prueba de la referencia nativa para el enfoque automático de Formisch.               |
 
 ## Ciclo de un formulario
 
@@ -123,7 +123,7 @@ const EmailSchema = v.pipe(v.string(), v.trim(), v.nonEmpty(messages.emailRequir
 Reglas actuales:
 
 - Los emails se recortan antes de enviarse y se validan como obligatorios y con formato correcto.
-- El nombre de perfil se recorta, admite hasta 80 caracteres y, si no está vacío, debe ser distinto al nombre actual.
+- El nombre visible de Firebase Auth se recorta, admite hasta 80 caracteres y, si no está vacío, debe ser distinto al nombre actual.
 - Registro y cambio de contraseña validan confirmación mediante `v.partialCheck` y `v.forward`.
 - El cambio de correo valida que el nuevo correo no sea el actual.
 - La política de contraseñas de Firebase se mantiene como comprobación asíncrona: no forma parte del esquema y se asigna al campo con `setErrors`.

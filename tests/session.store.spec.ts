@@ -8,17 +8,22 @@ const authMocks = vi.hoisted(() => ({
   loginWithGoogle: vi.fn(),
   logout: vi.fn(),
   observeAuthState: vi.fn(),
+  reloadAuthenticatedUser: vi.fn(),
   registerWithEmail: vi.fn(),
   resetPassword: vi.fn(),
+  updateAuthenticatedUserDisplayName: vi.fn(),
 }))
 
 const profileMocks = vi.hoisted(() => ({
   observeUserProfile: vi.fn(),
-  reconcileUserProfile: vi.fn(),
+  ensureUserProfile: vi.fn(),
+  getUserProfile: vi.fn(),
   setUserAccountStatus: vi.fn(),
-  updateUserProfile: vi.fn(),
 }))
 
+vi.mock('@/config/auth.config', () => ({
+  authConfig: { requiresProfile: true, requiresAccountStatus: true },
+}))
 vi.mock('@/services/auth.service', () => authMocks)
 vi.mock('@/services/profile.service', () => profileMocks)
 
@@ -51,7 +56,7 @@ describe('session store', () => {
       authErrorCallback = errorCallback
       return vi.fn()
     })
-    profileMocks.reconcileUserProfile.mockResolvedValue(undefined)
+    profileMocks.ensureUserProfile.mockResolvedValue(undefined)
     profileMocks.observeUserProfile.mockImplementation((_userId, next, error) => {
       const listener = { next, error, unsubscribe: vi.fn() }
       profileListeners.push(listener)
@@ -69,7 +74,7 @@ describe('session store', () => {
     await expect(resolution).resolves.toBe(true)
     expect(sessionStore.phase).toBe('ready')
     expect(sessionStore.isReady).toBe(true)
-    expect(profileMocks.reconcileUserProfile).not.toHaveBeenCalled()
+    expect(profileMocks.ensureUserProfile).not.toHaveBeenCalled()
   })
 
   it('waits for the authenticated user profile snapshot', async () => {
@@ -106,7 +111,7 @@ describe('session store', () => {
   it('fails closed when the initial profile connection fails', async () => {
     const sessionStore = useSessionStore()
     const user = createUser('alice')
-    profileMocks.reconcileUserProfile.mockRejectedValue(new Error('Firestore unavailable'))
+    profileMocks.ensureUserProfile.mockRejectedValue(new Error('Firestore unavailable'))
     const resolution = sessionStore.ensureReady()
 
     authStateCallback(user)
@@ -171,7 +176,7 @@ describe('session store', () => {
   it('retries a failed profile connection', async () => {
     const sessionStore = useSessionStore()
     const user = createUser('alice')
-    profileMocks.reconcileUserProfile.mockRejectedValueOnce(new Error('Temporary failure')).mockResolvedValueOnce(undefined)
+    profileMocks.ensureUserProfile.mockRejectedValueOnce(new Error('Temporary failure')).mockResolvedValueOnce(undefined)
     const initialResolution = sessionStore.ensureReady()
 
     authStateCallback(user)
@@ -202,9 +207,6 @@ function createUser(uid: string): User {
 function createProfile(user: User): UserProfile {
   return {
     id: user.uid,
-    email: user.email,
-    displayName: user.displayName ?? '',
-    photoURL: user.photoURL,
     status: 'active',
     createdAt: null,
     updatedAt: null,
