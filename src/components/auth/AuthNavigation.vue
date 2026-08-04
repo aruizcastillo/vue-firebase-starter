@@ -32,8 +32,10 @@ async function handleLogout(): Promise<void> {
           <ItemMedia>
             <Avatar class="size-9">
               <!-- Reemplazar por photoURL con fallback a inicial de 1. nombre o 2. email -->
-              <AvatarImage :src="authStore.user?.photoURL" />
-              <AvatarFallback>{{ userLabel.charAt(0) }}</AvatarFallback>
+              <AvatarImage v-if="authStore.user?.photoURL" :src="authStore.user.photoURL" />
+              <AvatarFallback v-else>
+                {{ userLabel.charAt(0) }}
+              </AvatarFallback>
             </Avatar>
           </ItemMedia>
           <ItemContent>
