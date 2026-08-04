@@ -55,6 +55,35 @@ stored shape and source of truth for every field.
 For implementation details, lifecycle states, realtime listeners, error
 handling, and test coverage, see [the internal authentication documentation](docs/auth/README.md).
 
+## Customization and themes
+
+The visual system is token-based, so a derived project can customize the
+interface from one place instead of restyling individual components. Update
+`src/styles/themes.css`: `:root` contains values shared by every theme (fonts,
+base font size, and radius), and each `[data-theme]` block contains the color
+tokens for that theme. The file includes the shadcn-vue semantic tokens and the
+project-specific status tokens such as success, warning, error, info, and hint.
+
+`src/main.css` registers those tokens with Tailwind through `@theme inline`.
+Use semantic utilities such as `bg-background`, `text-foreground`,
+`bg-primary`, or `border-border` (and the custom token utilities) directly;
+they stay connected to the CSS variables, so there is no need to use arbitrary
+value syntax such as `bg-(--custom-color)`.
+
+Themes are selected by a `data-theme` attribute on an ancestor of the app. The
+starter sets it on the `<html>` element in `index.html`:
+
+```html
+<html lang="en" data-theme="light"></html>
+```
+
+Set it to `dark` to use the dark token values. Tailwind's `dark:` variant is
+configured to follow `[data-theme="dark"]`, so `dark:` utilities work with the
+same attribute. When adding another theme, add its `[data-theme='theme-name']`
+token
+block and configure any variant behavior it needs; only the `dark` theme is
+currently wired to Tailwind's `dark:` variant.
+
 ## Requirements
 
 - Node.js `^22.18.0` or `>=24.12.0`.
