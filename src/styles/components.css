@@ -3,4 +3,8 @@
   .link-muted {
     @apply text-muted-foreground font-semibold underline-offset-4 hover:underline;
   }
+
+  .router-link-active {
+    font-weight: 600;
+  }
 }

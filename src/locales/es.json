@@ -9,7 +9,13 @@
     "currentPassword": "Contraseña actual",
     "newPassword": "Nueva contraseña",
     "confirmNewPassword": "Confirmar nueva contraseña",
-    "language": "Idioma"
+    "language": "Idioma",
+    "theme": "Tema"
+  },
+  "theme": {
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Oscuro"
   },
   "navigation": {
     "main": "Navegación principal",

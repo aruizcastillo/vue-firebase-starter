@@ -5,10 +5,10 @@ import AppHeader from '@/components/AppHeader.vue'
 </script>
 
 <template>
-  <div class="public-layout">
+  <div>
     <AppHeader />
 
-    <main class="public-content">
+    <main>
       <RouterView />
     </main>
   </div>
