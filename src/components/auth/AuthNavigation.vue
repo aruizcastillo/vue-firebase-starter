@@ -5,12 +5,10 @@ import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/stores/auth.store'
 
-import { Item, ItemMedia, ItemContent, ItemTitle, ItemActions } from '@/components/ui/item'
+import { Item, ItemMedia, ItemContent, ItemTitle } from '@/components/ui/item'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-
-import { EllipsisVertical } from '@lucide/vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -31,7 +29,6 @@ async function handleLogout(): Promise<void> {
         <Item as="button" type="button" size="sm" class="w-max cursor-pointer p-0 group" :aria-label="t('navigation.user')">
           <ItemMedia>
             <Avatar class="size-9">
-              <!-- Reemplazar por photoURL con fallback a inicial de 1. nombre o 2. email -->
               <AvatarImage v-if="authStore.user?.photoURL" :src="authStore.user.photoURL" />
               <AvatarFallback v-else>
                 {{ userLabel.charAt(0) }}
@@ -43,9 +40,6 @@ async function handleLogout(): Promise<void> {
               <span class="max-w-23 truncate group-hover:opacity-85">{{ userLabel }}</span>
             </ItemTitle>
           </ItemContent>
-          <ItemActions>
-            <EllipsisVertical aria-hidden="true" class="size-4" />
-          </ItemActions>
         </Item>
       </DropdownMenuTrigger>
       <DropdownMenuContent :align="'center'">
