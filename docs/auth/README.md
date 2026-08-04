@@ -1,207 +1,142 @@
-# Authentication, session, and user profile
+# Authentication and session architecture
 
-This document describes the internal authentication lifecycle of the starter.
-It covers Firebase Authentication, the Firestore user profile, session
-coordination, route policy, and global loading/error feedback.
+This document describes ownership, startup coordination, routing, optional
+Firestore features, and account-management flows. For exact persisted fields,
+see [Data models and persistence](../data-models/README.md).
 
-## Responsibilities
+## Responsibility boundaries
 
-| Layer                        | Responsibility                                                 |
-| ---------------------------- | -------------------------------------------------------------- |
-| `auth.service.ts`            | Calls the Firebase Authentication SDK.                         |
-| `auth.store.ts`              | Owns the observed Firebase user and authentication operations. |
-| `profile.service.ts`         | Reconciles, observes, and mutates `users/{uid}`.               |
-| `profile.store.ts`           | Owns one realtime profile connection for the current UID.      |
-| `session.store.ts`           | Coordinates Auth restoration and initial profile readiness.    |
-| `session-policy.ts`          | Applies the pure account-access redirect policy.               |
-| `guards.ts`                  | Waits for session readiness and performs redirects.            |
-| `SessionFeedbackOverlay.vue` | Displays blocking startup and session-error feedback.          |
-
-Firebase Authentication is the identity source. Firestore Security Rules are
-the authorization boundary for profile data. Router guards improve navigation
-and user experience, but they are not a security boundary.
-
-## Startup lifecycle
-
-`main.ts` creates Pinia before registering the router guards and session
-reconciliation watchers. The application then mounts without waiting for
-Firebase manually.
-
-The first navigation follows this sequence:
+The architecture deliberately keeps identity and application data separate:
 
 ```text
-router guard
-  -> sessionStore.ensureReady()
-  -> authStore.initialize()
-  -> first onAuthStateChanged callback
-      -> no user: session is ready
-      -> authenticated user: profileStore.connect(user)
-          -> reconcile users/{uid}
-          -> attach onSnapshot
-          -> first valid profile snapshot
-          -> session is ready
-  -> apply route redirect policy
+Firebase Auth User
+  -> uid, email, displayName, photoURL, providers, verification
+
+Optional users/{uid} Firestore document
+  -> application metadata
+  -> account status (full mode only)
 ```
 
-Concurrent calls to `ensureReady()` share the same resolution promise. Normal
-navigations after readiness do not reconnect Auth or reload the profile.
+- The Auth observer is the source of truth for the current Firebase user.
+- `authStore.user` is the source used by navigation, greetings, and account
+  identity forms.
+- Firestore never mirrors `email`, `displayName`, or `photoURL`.
+- Firestore document reads are the source of truth for optional application
+  profile data; the full-mode listener is the source of truth for status.
+- Router policy improves client behavior; Firestore Security Rules enforce data
+  access.
 
-## Firebase Authentication
+Firebase `User` is an opaque SDK object stored in a `shallowRef` and marked raw.
+After SDK methods mutate it in place, the Auth store triggers that ref so Vue
+consumers see the new display name or verified email.
 
-### State
+## Authentication modes
 
-The Auth store exposes:
+`src/config/auth.config.ts` exposes one selector, `authMode`, and derives valid
+feature flags from it.
+
+| Mode        | Auth identity | Firestore `users/{uid}` | Account-status routing |
+| ----------- | ------------- | ----------------------- | ---------------------- |
+| `auth-only` | Yes           | No                      | No                     |
+| `profile`   | Yes           | Timestamps only         | No                     |
+| `full`      | Yes           | Timestamps + status     | Yes                    |
+
+Auth-only is the repository default. Profile mode is intentionally a minimal
+base for derived projects that will add private application-specific user
+fields. Full mode opts into account status and its session dependency.
+
+Identity UI works in all three modes. Selecting auth-only does not remove the
+Auth user's email, display name, or provider photo; it only disables the
+starter Firestore profile capability.
+
+## Auth store
+
+The Auth store owns one `onAuthStateChanged` subscription and these states:
 
 ```ts
 type AuthStatus = 'idle' | 'restoring' | 'unauthenticated' | 'authenticating' | 'authenticated' | 'signing-out'
 ```
 
-Its relevant state is:
+`initialize()` is idempotent and shares one promise while startup is pending.
+Login and logout wait for the Auth observer to publish the expected UID instead
+of assigning `user` directly. This keeps external changes and local operations
+on the same state path.
 
-- `user`: the current opaque Firebase `User`, stored in a `shallowRef` and
-  marked raw to prevent Vue from traversing SDK internals;
-- `initialized`: whether the observer has emitted its first state;
-- `observerError`: failure of the Auth observer;
-- `error`: authentication-operation feedback;
-- `localTransition`: distinguishes a login/logout initiated by this tab from an
-  external Auth change;
-- `operationLoading`: loading state for non-session operations such as password
-  reset and password-policy validation.
+Auth operations include registration, email/password login, Google login,
+logout, password reset/policy validation, display-name update, and explicit
+user reload after a verified email change. Operation failures are mapped to
+safe localized messages.
 
-### Observer ownership
+## Firestore profile store
 
-`onAuthStateChanged` is the only source that writes the current user. Login and
-registration credentials are not copied directly into the store. Instead, the
-operation waits until the observer emits the expected UID. Sign-out similarly
-waits until the observer emits `null`.
+Profiles are enabled in `profile` and `full` modes, but they have different
+lifecycle requirements.
 
-`initialize()` deduplicates concurrent callers and creates at most one active
-Auth observer. If that observer fails, the store:
+In profile mode, a feature explicitly calls `profileStore.load(user)`. That
+operation:
 
-1. records the observer error;
-2. marks Auth as unresolved;
-3. cancels the failed subscription;
-4. rejects pending observer-state waiters;
-5. allows a later initialization attempt to create a replacement observer.
+1. runs a transaction against `users/{uid}`;
+2. creates the document with server timestamps if it does not exist;
+3. does nothing if it already exists;
+4. performs a one-time read and stores the result;
+5. opens no listener and does not affect session readiness.
 
-This keeps Firebase Auth changes from other tabs or windows authoritative.
+In full mode, session startup calls `profileStore.connect(user)`. It ensures the
+document exists, attaches one document listener, and resolves only after the
+first valid snapshot provides `status`. The listener remains active so status
+changes can affect an open application immediately.
 
-### Supported operations
+There is no identity reconciliation because identity is not duplicated.
+Existing documents are not rewritten during session restoration.
 
-The service/store pair supports:
+The store deduplicates concurrent operations for one UID, clears data when the
+UID changes, disconnects any active listener, and ignores stale operation
+generations. One-time profile errors remain local to the requesting feature;
+required full-mode connection errors fail session readiness.
 
-- email/password registration and login;
-- Google popup login;
-- logout;
-- password reset with a neutral response for unknown addresses;
-- Firebase password-policy validation;
-- password change after password reauthentication;
-- verified email change after password or Google reauthentication.
-
-The Auth Emulator does not implement Firebase's password-policy endpoint. In
-emulator mode, registration uses the emulator-compatible fallback policy.
-
-## Firestore user profile
-
-### Document model
-
-Each Firebase user owns one private document:
-
-```text
-users/{firebaseAuthUid}
-```
+In profile mode the stored model is:
 
 ```ts
-interface UserProfile {
-  id: string
-  email: string | null
-  displayName: string
-  photoURL: string | null
-  status: 'active' | 'deactivated' | 'suspended'
-  createdAt: Timestamp | null
-  updatedAt: Timestamp | null
+{
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 ```
 
-The UID is encoded in the document path and is not stored as a profile field.
-Identity fields mirror Firebase Auth. Profile and Auth writes are separate
-Firebase operations and cannot be one atomic transaction across both services.
-Reconciliation repairs an incomplete identity update on a later retry or
-session restoration.
-
-### Connection state
+In full mode it is:
 
 ```ts
-type ProfileConnectionState = 'idle' | 'connecting' | 'ready' | 'error'
+{
+  status: 'active' | 'deactivated' | 'suspended'
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
 ```
 
-The Profile store separates:
-
-- `connectionError`: failure to establish or maintain the realtime profile;
-- `operationError`: failure of a profile mutation or reconciliation requested
-  by a page;
-- `updating`: pending profile mutation;
-- `loading`: compatibility computed value for the initial connection only.
-
-Connection errors affect session availability. Operation errors remain local
-to the feature that initiated the mutation and do not hide the application.
-
-### Connecting a user
-
-`connect(user)` owns the complete lifecycle for one UID:
-
-1. Return immediately if that UID already has a ready profile.
-2. Share the existing promise if the same UID is connecting.
-3. Disconnect any previous UID.
-4. Reconcile or create `users/{uid}` in a Firestore transaction.
-5. Attach one `onSnapshot` listener to the document.
-6. Resolve the initial connection only after the first existing, valid
-   snapshot.
-
-New documents are created with identity fields from Firebase Auth, status
-`active`, and server timestamps. Existing active documents update their
-identity fields only when needed. Deactivated and suspended profiles are not
-silently reactivated or identity-reconciled during connection.
-
-A connection generation counter identifies the current UID lifecycle. Every
-callback verifies both UID and generation, so delayed callbacks from an old
-listener cannot replace the current profile or error state.
-
-`disconnect()` unsubscribes the listener, invalidates pending callbacks,
-resolves an unfinished initial connection as unsuccessful, and clears all
-profile state. It runs when the user signs out or the UID changes.
-
-### Realtime behavior and mutations
-
-After readiness, `onSnapshot` remains attached:
-
-- later snapshots replace the current profile;
-- status changes made by an administrator or another tab are reflected without
-  navigation reads;
-- a listener error moves the profile connection to `error` and clears the
-  profile.
-
-Display-name and status mutations do not reload the document. The listener
-reflects local and server-confirmed writes. This avoids redundant reads and
-keeps one source for profile state.
-
-`reconcile(user)` is also available for explicit identity synchronization, such
-as after a verified email change. It reports an operation error without opening
-another listener.
+The client model maps absent status to `null`; this is expected only in profile
+mode. Legacy identity-mirroring schemas and migrations are intentionally not
+supported.
 
 ## Account status
 
-| Status        | Client behavior                                         | Allowed recovery                                 |
-| ------------- | ------------------------------------------------------- | ------------------------------------------------ |
-| `active`      | Normal application access.                              | Not applicable.                                  |
-| `deactivated` | Restricted-account screen with reactivation and logout. | The user may change the status back to `active`. |
-| `suspended`   | Restricted-account screen without reactivation.         | Only an administrator may restore the account.   |
+Status participates in routing and account UI only in full mode.
 
-The client never provides an action that writes `suspended`. Firestore rules
-allow owners to create/read/update only their own document, validate the exact
-schema, deny deletion, control timestamps, and restrict status transitions.
-Suspended profiles are read-only to the client. Administrative Console or Admin
-SDK writes bypass client rules and can restore them.
+| Status        | Client behavior                                  | Recovery                              |
+| ------------- | ------------------------------------------------ | ------------------------------------- |
+| `active`      | Normal access.                                   | Not applicable.                       |
+| `deactivated` | Restricted screen with reactivation and logout.  | Owner may change it back to `active`. |
+| `suspended`   | Restricted screen without a reactivation action. | Trusted administration only.          |
+
+The client creates only `active`, can transition `active` to `deactivated` and
+back, and can never write `suspended`. Suspended documents are client-read-only.
+Admin SDK and Console operations bypass client rules and must be protected by
+the project's administrative controls.
+
+The starter uses status for restricted-account routing, but a derived project
+owns the final product policy. Future business-collection rules do not inherit
+that policy automatically. If inactive accounts should lose backend data
+access, those rules should explicitly require an active profile; client routing
+is only user-experience behavior.
 
 ## Session coordination
 
@@ -211,134 +146,144 @@ The Session store is the application-level readiness state machine:
 type SessionPhase = 'idle' | 'restoring-auth' | 'loading-profile' | 'ready' | 'error'
 ```
 
-Derived state:
+`ensureReady()`:
 
-- `isBusy`: Auth restoration or initial profile loading;
-- `isReady`: the session has resolved successfully;
-- `isBlocking`: startup work or a session error requires the global overlay.
+- restores Auth once;
+- considers a signed-out session ready without touching Firestore;
+- considers authenticated auth-only and profile sessions ready as soon as Auth
+  resolves;
+- in full mode, connects `users/{uid}` and waits for its first snapshot;
+- shares one promise across concurrent guards and components;
+- fails closed if required startup state cannot be restored.
 
-`ensureReady()` behaves as follows:
+The profile is loaded once for full-mode session startup, not once per
+navigation. Normal route changes reuse the ready session and do not reload,
+reconcile, or open another listener. Auth-only performs no profile access;
+profile mode accesses Firestore only when a feature explicitly requests it.
 
-- restore Auth if it has not initialized;
-- consider an unauthenticated session ready without connecting a profile;
-- connect the authenticated user's profile and wait for its first snapshot;
-- enter `error` if Auth restoration or initial profile connection fails;
-- reuse the same promise for concurrent guards or components;
-- return immediately for the already resolved UID.
+The store watches UID changes synchronously. A change invalidates old readiness,
+disconnects the previous profile, clears cached data, and resolves the new
+identity. Auth observer errors always fail the session; profile listener errors
+fail it only in full mode, where status is required.
 
-The store watches the observed UID synchronously. A UID change invalidates the
-previous resolution, disconnects the previous profile, and automatically starts
-resolution for the new identity. If the UID changes during a profile
-connection, the old result is discarded and resolution continues with the new
-user.
-
-It also watches Auth observer errors and profile connection errors. Initial and
-later connection failures fail closed: protected interaction remains blocked
-until retry or logout. Profile mutations do not move a ready session back to a
-loading phase.
-
-`retry()` invalidates the failed lifecycle, disconnects the profile, and runs a
-fresh readiness resolution. It does not introduce a public force flag.
+`retry()` starts a fresh readiness lifecycle after an error. It does not force
+normal navigation to reload session data.
 
 ## Router integration
 
-Every navigation awaits only `sessionStore.ensureReady()`. Guards do not call
-Auth or profile synchronization directly.
+Every navigation awaits `sessionStore.ensureReady()` and then applies the pure
+policy in `session-policy.ts`.
 
-After readiness, `getSessionRedirect()` applies a pure policy:
+| Session and destination                           | Result                            |
+| ------------------------------------------------- | --------------------------------- |
+| Signed out, home                                  | Welcome.                          |
+| Signed out, protected route                       | Login with a safe local redirect. |
+| Signed in, guest-only route                       | Home.                             |
+| Restricted full-mode account, normal route        | Restricted-account page.          |
+| Active full-mode account, restricted-account page | Home.                             |
 
-| Session and destination                           | Result                                            |
-| ------------------------------------------------- | ------------------------------------------------- |
-| Signed out, home                                  | Welcome page.                                     |
-| Signed out, another protected route               | Login with the original `fullPath` in `redirect`. |
-| Signed in, active, guest-only route               | Home.                                             |
-| Signed in, deactivated or suspended, normal route | Restricted-account page.                          |
-| Signed in, active, restricted-account page        | Home.                                             |
-| Signed in, restricted, restricted-account page    | Allow navigation.                                 |
+If readiness fails, navigation uses the neutral `session-error` route and
+preserves the intended local destination. Protocol-relative and external
+redirects are rejected.
 
-If readiness fails, navigation goes to the neutral `session-error` route while
-preserving the original destination in `redirect`. Redirect values are accepted
-only when they are local absolute paths beginning with one `/`; protocol-relative
-paths are rejected.
+Reconciliation watchers reapply policy after an external Auth change, a
+full-mode realtime status change, or a required listener failure. Local
+login/logout actions retain control of their intended destination.
 
-Session reconciliation watchers reapply the same policy when:
+## Global feedback overlay
 
-- Auth changes externally, including another tab signing in or out;
-- the realtime profile status changes;
-- a ready profile listener later fails.
+`App.vue` keeps `RouterView` mounted. While session restoration blocks safe
+interaction, its route container becomes `inert` and
+`SessionFeedbackOverlay.vue` renders above it.
 
-Local login/logout transitions are not redirected by the external-change
-watcher. Their initiating page retains control of the intended destination.
+The overlay is required for:
 
-## Global loading and error feedback
+- Auth restoration in every mode;
+- the first full-mode profile snapshot required to obtain status;
+- retry/logout recovery from session errors.
 
-`App.vue` always keeps `RouterView` mounted. It never replaces the route tree
-with a spinner. While the session blocks interaction, the RouterView container
-receives `inert`, which removes its descendants from pointer and keyboard
-interaction.
-
-`SessionFeedbackOverlay.vue` renders above the route tree:
-
-- an accessible spinner during `restoring-auth` and `loading-profile`;
-- an error card during `error`;
-- retry and logout actions;
-- temporary blocking while those actions navigate.
-
-A successful retry returns to the safe destination stored by the router. A
-successful logout resolves the anonymous session and navigates to the welcome
-page. Navigation state is cleared in `finally` blocks so a router failure cannot
-leave the overlay permanently loading.
+It is not activated by normal navigation after readiness. Consequently, no
+special adaptation is needed merely because identity now comes from Auth.
+Auth-only and profile startup skip the `loading-profile` phase naturally. The
+generic phase name remains appropriate because status is part of the private
+application profile and the document may gain other session-relevant fields.
 
 ## Account-management flows
 
 ### Display name
 
-Updating a display name writes Firebase Auth first and Firestore second. The
-profile listener reflects the Firestore write. A later reconciliation repairs
-identity divergence if only the Auth write succeeded.
+The personal-information form is available in all modes. It calls Firebase Auth
+`updateProfile()` only, then refreshes the shallow Auth ref. No Firestore write
+or synchronization is involved. An empty display name is allowed.
+
+### Photo URL
+
+The UI may display the `photoURL` supplied by Firebase Auth or an identity
+provider. The starter does not currently provide photo upload/edit management.
 
 ### Verified email change
 
-Email/password users reauthenticate with their password. Google users
-reauthenticate through a popup. Firebase sends a verification link to the new
-address. After the link is completed, the page reloads the Firebase user,
-refreshes its ID token, and invokes `profileStore.reconcile(user)`.
+Password users reauthenticate with their current password; Google users use a
+popup. Firebase sends a verification link to the new address. After completion,
+the page reloads the Auth user and refreshes its ID token. No Firestore
+reconciliation occurs.
+
+### Password change
+
+Password users reauthenticate, validate the new value against Firebase's
+password policy, and update their Auth credential. Provider-only users do not
+see the password-change form.
 
 ### Deactivation and reactivation
 
-Deactivation writes profile status `deactivated`; the realtime listener applies
-the restricted policy, and the action signs the user out. A later login connects
-the same profile and routes to the restricted-account page. Reactivation writes
-`active`; suspended accounts never render this action.
+Available only in full mode. Deactivation updates Firestore status and signs
+out. A later login observes the same status and routes to the restricted page.
+Reactivation updates status to `active`; suspended accounts never render that
+action.
+
+## Firestore rule variants
+
+| Mode      | Rule file                 | Firebase config         | Deployment command                     |
+| --------- | ------------------------- | ----------------------- | -------------------------------------- |
+| Full      | `firestore.rules.full`    | `firebase.full.json`    | `pnpm firebase:deploy:rules:full`      |
+| Profile   | `firestore.rules.profile` | `firebase.profile.json` | `pnpm firebase:deploy:rules:profile`   |
+| Auth only | `firestore.rules`         | `firebase.json`         | `pnpm firebase:deploy:rules:auth-only` |
+
+Full rules accept the exact timestamp/status schema and protected status
+transitions. Profile rules accept only the exact timestamp schema and expose no
+client update operation. Auth-only rules default-deny every Firestore path.
+
+`firebase.json`, `pnpm firebase:deploy:rules`, and
+`pnpm firebase:emulators` follow the auth-only repository default. Named
+profile/full commands select their corresponding Firebase configuration.
+
+Deploy the client build and matching rule variant together. A derived project
+must deliberately add and test every business collection in each mode that
+should expose it.
 
 ## Invariants
 
-The implementation should preserve these guarantees:
-
-- at most one active Auth observer;
-- exactly one profile listener for the resolved UID;
-- no profile listener for an unauthenticated session;
-- normal navigation does not reconcile or reload the profile;
-- callbacks from disconnected users cannot mutate current state;
-- the Auth observer is the only writer of the current Firebase user;
-- profile listener data is the only writer of the connected profile;
-- initial connection errors block protected interaction;
-- later mutations do not replace the whole application with a spinner;
-- client routing never substitutes for Firestore Security Rules.
+- At most one active Auth observer.
+- Exactly one profile listener for the resolved UID in full mode.
+- No profile access in auth-only mode or while signed out.
+- No automatic profile access or session dependency in profile mode.
+- Auth is the sole source for email, display name, and photo URL.
+- Firestore profile snapshots are the sole source for application status.
+- Normal navigation does not reload Auth or Firestore state.
+- Stale listener callbacks cannot mutate the current profile.
+- Required startup errors block protected interaction until retry or logout.
+- Client routing never substitutes for Firestore Security Rules.
 
 ## Test coverage
 
-The relevant suites are:
-
-- `tests/auth.store.spec.ts`: observer lifecycle and Auth operations;
-- `tests/profile.store.spec.ts`: connection deduplication, listener ownership,
-  stale callbacks, realtime updates, and mutation errors;
-- `tests/session.store.spec.ts`: all readiness transitions, concurrency, UID
-  changes, retry, and error races;
-- `tests/session-policy.spec.ts`: redirect matrix and safe redirects;
-- `tests/router.reconciliation.spec.ts`: external Auth/status changes and late
-  listener failures;
-- `tests/app.session-feedback.spec.ts`: mounted RouterView, overlay, retry, and
-  logout;
-- `tests/firestore.rules.spec.ts`: owner isolation, schema validation, and status
-  transitions.
+- `tests/auth.store.spec.ts`: observer lifecycle, Auth operations, and opaque
+  user refreshes;
+- `tests/profile.store.spec.ts`: document creation, listener ownership,
+  concurrency, stale callbacks, and status mutations;
+- `tests/session.store.spec.ts`, `tests/session.profile.spec.ts`, and
+  `tests/session.auth-only.spec.ts`: readiness across all three modes;
+- `tests/session-policy.spec.ts` and `tests/router.reconciliation.spec.ts`:
+  redirect policy and external changes;
+- `tests/app.session-feedback.spec.ts`: mounted routes, overlay, retry, logout;
+- `tests/firestore*.rules.spec.ts`: exact schemas, ownership, timestamps,
+  state transitions, and default denial.

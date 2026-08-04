@@ -10,8 +10,11 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "test": "run-s test:unit test:rules",
-    "test:unit": "vitest run --exclude tests/firestore.rules.spec.ts",
-    "test:rules": "firebase emulators:exec --config firebase.test.json --project demo-vue-firebase-starter --only firestore \"vitest run tests/firestore.rules.spec.ts\"",
+    "test:unit": "vitest run --exclude \"tests/firestore*.rules.spec.ts\"",
+    "test:rules": "firebase emulators:exec --config firebase.test.json --project demo-vue-firebase-starter-full --only firestore \"vitest run tests/firestore.rules.spec.ts tests/firestore.profile.rules.spec.ts tests/firestore.auth-only.rules.spec.ts --no-file-parallelism\"",
+    "test:rules:full": "firebase emulators:exec --config firebase.test.json --project demo-vue-firebase-starter-full --only firestore \"vitest run tests/firestore.rules.spec.ts\"",
+    "test:rules:profile": "firebase emulators:exec --config firebase.test.json --project demo-vue-firebase-starter-profile --only firestore \"vitest run tests/firestore.profile.rules.spec.ts\"",
+    "test:rules:auth-only": "firebase emulators:exec --config firebase.test.json --project demo-vue-firebase-starter-auth-only --only firestore \"vitest run tests/firestore.auth-only.rules.spec.ts\"",
     "lint": "run-s \"lint:*\"",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
@@ -19,7 +22,13 @@
     "format:check": "prettier --check --ignore-unknown .",
     "firebase": "firebase",
     "firebase:emulators": "firebase emulators:start",
-    "firebase:deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes"
+    "firebase:emulators:auth-only": "firebase emulators:start",
+    "firebase:emulators:profile": "firebase emulators:start --config firebase.profile.json",
+    "firebase:emulators:full": "firebase emulators:start --config firebase.full.json",
+    "firebase:deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
+    "firebase:deploy:rules:full": "firebase deploy --config firebase.full.json --only firestore:rules,firestore:indexes",
+    "firebase:deploy:rules:profile": "firebase deploy --config firebase.profile.json --only firestore:rules,firestore:indexes",
+    "firebase:deploy:rules:auth-only": "firebase deploy --only firestore:rules,firestore:indexes"
   },
   "dependencies": {
     "@formisch/vue": "1.0.0-rc.0",

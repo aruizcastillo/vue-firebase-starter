@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
+import { authConfig } from '@/config/auth.config'
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
 import type { SessionPhase } from '@/types/session.types'
@@ -27,7 +28,7 @@ export const useSessionStore = defineStore('session', () => {
       if (userId === previousUserId) return
 
       resolvedUserId = unresolvedUser
-      profileStore.disconnect()
+      if (authConfig.requiresProfile) profileStore.disconnect()
 
       if (authStore.initialized) {
         void resolveCurrentSession()
@@ -36,16 +37,18 @@ export const useSessionStore = defineStore('session', () => {
     { flush: 'sync' },
   )
 
-  watch(
-    () => profileStore.connectionState,
-    (connectionState) => {
-      if (connectionState !== 'error' || !authStore.user) return
+  if (authConfig.requiresAccountStatus) {
+    watch(
+      () => profileStore.connectionState,
+      (connectionState) => {
+        if (connectionState !== 'error' || !authStore.user) return
 
-      phase.value = 'error'
-      error.value = profileStore.connectionError
-    },
-    { flush: 'sync' },
-  )
+        phase.value = 'error'
+        error.value = profileStore.connectionError
+      },
+      { flush: 'sync' },
+    )
+  }
 
   watch(
     () => authStore.observerError,
@@ -53,7 +56,7 @@ export const useSessionStore = defineStore('session', () => {
       if (!observerError) return
 
       resolvedUserId = unresolvedUser
-      profileStore.disconnect()
+      if (authConfig.requiresProfile) profileStore.disconnect()
       phase.value = 'error'
       error.value = observerError
     },
@@ -98,8 +101,15 @@ export const useSessionStore = defineStore('session', () => {
         const currentUser = authStore.user
 
         if (!currentUser) {
-          profileStore.disconnect()
+          if (authConfig.requiresProfile) profileStore.disconnect()
           resolvedUserId = null
+          phase.value = 'ready'
+          error.value = null
+          return true
+        }
+
+        if (!authConfig.requiresAccountStatus) {
+          resolvedUserId = currentUser.uid
           phase.value = 'ready'
           error.value = null
           return true
@@ -141,7 +151,7 @@ export const useSessionStore = defineStore('session', () => {
 
   function retry(): Promise<boolean> {
     resolvedUserId = unresolvedUser
-    profileStore.disconnect()
+    if (authConfig.requiresProfile) profileStore.disconnect()
     phase.value = 'idle'
     error.value = null
 

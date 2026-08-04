@@ -4,7 +4,8 @@ import type { SubmitHandler } from '@formisch/vue'
 import { computed, onBeforeMount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { authServiceErrorCodes, changePassword, checkPasswordAgainstPolicy, reloadAuthenticatedUser, requestEmailChange } from '@/services/auth.service'
+import { authConfig } from '@/config/auth.config'
+import { authServiceErrorCodes, changePassword, checkPasswordAgainstPolicy, requestEmailChange } from '@/services/auth.service'
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
@@ -92,12 +93,11 @@ async function refreshVerifiedEmail(): Promise<void> {
   setErrors(emailChangeForm, { errors: null })
   emailChangeLoading.value = true
   try {
-    await reloadAuthenticatedUser(user)
-    if (!(await profileStore.reconcile(user))) {
-      showEmailChangeError(profileStore.operationError ?? t('errors.operationFailed'))
+    if (!(await authStore.refreshUser())) {
+      showEmailChangeError(authStore.error ?? t('errors.operationFailed'))
       return
     }
-    toast.success(t('account.emailSynchronized'))
+    toast.success(t('account.emailRefreshed'))
   } catch (caughtError) {
     showEmailChangeError(getAuthErrorMessage(caughtError))
   } finally {
@@ -253,7 +253,7 @@ function showPasswordChangeError(errorMessage: string): void {
       </CardFooter>
     </Card>
 
-    <Card aria-labelledby="deactivate-account-heading" class="border-destructive">
+    <Card v-if="authConfig.requiresAccountStatus" aria-labelledby="deactivate-account-heading" class="border-destructive">
       <CardHeader class="flex flex-col">
         <CardTitle id="deactivate-account-heading" class="text-xl font-bold">{{ t('account.deactivate') }}</CardTitle>
         <CardDescription>{{ t('account.deactivateIntro') }}</CardDescription>

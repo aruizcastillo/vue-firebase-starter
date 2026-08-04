@@ -1,5 +1,6 @@
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 
+import { authConfig } from '@/config/auth.config'
 import type { UserAccountStatus } from '@/types/profile.types'
 
 export interface SessionPolicyState {
@@ -7,7 +8,11 @@ export interface SessionPolicyState {
   accountStatus: UserAccountStatus | null
 }
 
-export function getSessionRedirect(to: RouteLocationNormalized, state: SessionPolicyState): RouteLocationRaw | undefined {
+export interface SessionPolicyOptions {
+  requiresAccountStatus: boolean
+}
+
+export function getSessionRedirect(to: RouteLocationNormalized, state: SessionPolicyState, options: SessionPolicyOptions = authConfig): RouteLocationRaw | undefined {
   if (!state.authenticated) {
     if (!to.meta.requiresAuth) return
 
@@ -19,13 +24,13 @@ export function getSessionRedirect(to: RouteLocationNormalized, state: SessionPo
     }
   }
 
-  const restrictedAccount = state.accountStatus === 'deactivated' || state.accountStatus === 'suspended'
+  const restrictedAccount = options.requiresAccountStatus && (state.accountStatus === 'deactivated' || state.accountStatus === 'suspended')
 
   if (restrictedAccount && !to.meta.allowRestrictedAccount) {
     return { name: 'account-deactivated' }
   }
 
-  if (state.accountStatus === 'active' && to.meta.allowRestrictedAccount) {
+  if (options.requiresAccountStatus && state.accountStatus === 'active' && to.meta.allowRestrictedAccount) {
     return { name: 'home' }
   }
 

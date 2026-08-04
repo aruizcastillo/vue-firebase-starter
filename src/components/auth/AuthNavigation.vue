@@ -4,14 +4,12 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/stores/auth.store'
-import { useProfileStore } from '@/stores/profile.store'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const profileStore = useProfileStore()
 const { t } = useI18n()
 
-const userLabel = computed(() => profileStore.profile?.displayName || authStore.user?.email || t('common.user'))
+const userLabel = computed(() => authStore.user?.displayName || authStore.user?.email || t('common.user'))
 
 async function handleLogout(): Promise<void> {
   const succeeded = await authStore.signOut()

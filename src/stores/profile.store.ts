@@ -1,12 +1,11 @@
 import { computed, ref } from 'vue'
-import { FirebaseError } from 'firebase/app'
 import type { User } from 'firebase/auth'
 import type { Unsubscribe } from 'firebase/firestore'
 import { defineStore } from 'pinia'
 
-import { observeUserProfile, reconcileUserProfile, setUserAccountStatus, updateUserProfile } from '@/services/profile.service'
+import { authConfig } from '@/config/auth.config'
+import { ensureUserProfile, getUserProfile, observeUserProfile, setUserAccountStatus } from '@/services/profile.service'
 import type { ProfileConnectionState, UserAccountStatus, UserProfile } from '@/types/profile.types'
-import { getAuthErrorMessage } from '@/utils/auth-errors'
 import { getProfileErrorMessage } from '@/utils/profile-errors'
 import { i18n } from '@/i18n'
 
@@ -25,7 +24,15 @@ export const useProfileStore = defineStore('profile', () => {
 
   const loading = computed(() => connectionState.value === 'connecting')
 
+  function load(currentUser: User): Promise<boolean> {
+    return startProfileOperation(currentUser, loadProfile)
+  }
+
   function connect(currentUser: User): Promise<boolean> {
+    return startProfileOperation(currentUser, establishConnection)
+  }
+
+  function startProfileOperation(currentUser: User, operation: (currentUser: User, currentGeneration: number) => Promise<boolean>): Promise<boolean> {
     if (activeUserId === currentUser.uid && connectionState.value === 'ready' && profile.value) {
       return Promise.resolve(true)
     }
@@ -42,7 +49,7 @@ export const useProfileStore = defineStore('profile', () => {
     connectionError.value = null
     operationError.value = null
 
-    const activeConnection = establishConnection(currentUser, currentGeneration)
+    const activeConnection = operation(currentUser, currentGeneration)
     connectionPromise = activeConnection
 
     void activeConnection.finally(() => {
@@ -54,9 +61,41 @@ export const useProfileStore = defineStore('profile', () => {
     return activeConnection
   }
 
+  async function loadProfile(currentUser: User, currentGeneration: number): Promise<boolean> {
+    try {
+      await ensureUserProfile(currentUser.uid)
+
+      if (!isCurrentConnection(currentUser.uid, currentGeneration)) return false
+
+      const loadedProfile = await getUserProfile(currentUser.uid)
+      if (!isCurrentConnection(currentUser.uid, currentGeneration)) return false
+
+      if (!loadedProfile) {
+        failConnection(new Error('profile-creation-failed'))
+        return false
+      }
+
+      if (authConfig.requiresAccountStatus && !loadedProfile.status) {
+        failConnection(new Error('invalid-profile-document'))
+        return false
+      }
+
+      profile.value = loadedProfile
+      connectionState.value = 'ready'
+      connectionError.value = null
+      return true
+    } catch (caughtError) {
+      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
+        failConnection(caughtError)
+      }
+
+      return false
+    }
+  }
+
   async function establishConnection(currentUser: User, currentGeneration: number): Promise<boolean> {
     try {
-      await reconcileUserProfile(currentUser)
+      await ensureUserProfile(currentUser.uid)
 
       if (!isCurrentConnection(currentUser.uid, currentGeneration)) return false
 
@@ -94,6 +133,14 @@ export const useProfileStore = defineStore('profile', () => {
             return
           }
 
+          if (authConfig.requiresAccountStatus && !observedProfile.status) {
+            unsubscribe?.()
+            unsubscribe = null
+            failConnection(new Error('invalid-profile-document'))
+            connectionResolver?.(false)
+            return
+          }
+
           profile.value = observedProfile
           connectionState.value = 'ready'
           connectionError.value = null
@@ -108,52 +155,6 @@ export const useProfileStore = defineStore('profile', () => {
         },
       )
     })
-  }
-
-  async function reconcile(currentUser: User | null): Promise<boolean> {
-    if (!currentUser) {
-      operationError.value = i18n.global.t('errors.noAuthenticatedUser')
-      return false
-    }
-
-    operationError.value = null
-
-    try {
-      await reconcileUserProfile(currentUser)
-      return true
-    } catch (caughtError) {
-      operationError.value = getProfileOperationErrorMessage(caughtError)
-      return false
-    }
-  }
-
-  async function update(currentUser: User | null, displayName: string): Promise<boolean> {
-    if (!currentUser || activeUserId !== currentUser.uid) {
-      operationError.value = i18n.global.t('errors.noAuthenticatedUser')
-      return false
-    }
-
-    const currentGeneration = connectionGeneration
-    updating.value = true
-    operationError.value = null
-
-    try {
-      await updateUserProfile(currentUser, {
-        displayName: displayName.trim(),
-      })
-
-      return isCurrentConnection(currentUser.uid, currentGeneration)
-    } catch (caughtError) {
-      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
-        operationError.value = getProfileOperationErrorMessage(caughtError)
-      }
-
-      return false
-    } finally {
-      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
-        updating.value = false
-      }
-    }
   }
 
   async function updateStatus(currentUser: User | null, status: UserAccountStatus): Promise<boolean> {
@@ -171,7 +172,7 @@ export const useProfileStore = defineStore('profile', () => {
       return isCurrentConnection(currentUser.uid, currentGeneration)
     } catch (caughtError) {
       if (isCurrentConnection(currentUser.uid, currentGeneration)) {
-        operationError.value = getProfileOperationErrorMessage(caughtError)
+        operationError.value = getProfileErrorMessage(caughtError)
       }
 
       return false
@@ -207,14 +208,6 @@ export const useProfileStore = defineStore('profile', () => {
     return activeUserId === userId && connectionGeneration === currentGeneration
   }
 
-  function getProfileOperationErrorMessage(caughtError: unknown): string {
-    if (caughtError instanceof FirebaseError && caughtError.code.startsWith('auth/')) {
-      return getAuthErrorMessage(caughtError)
-    }
-
-    return getProfileErrorMessage(caughtError)
-  }
-
   return {
     profile,
     connectionState,
@@ -222,9 +215,8 @@ export const useProfileStore = defineStore('profile', () => {
     operationError,
     loading,
     updating,
+    load,
     connect,
-    reconcile,
-    update,
     updateStatus,
     disconnect,
   }

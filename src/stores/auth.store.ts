@@ -1,9 +1,9 @@
-import { computed, markRaw, ref, shallowRef } from 'vue'
+import { computed, markRaw, ref, shallowRef, triggerRef } from 'vue'
 import { FirebaseError } from 'firebase/app'
 import type { PasswordValidationStatus, Unsubscribe, User, UserCredential } from 'firebase/auth'
 import { defineStore } from 'pinia'
 
-import { checkPasswordAgainstPolicy, loginWithEmail, loginWithGoogle, logout, observeAuthState, registerWithEmail, resetPassword } from '@/services/auth.service'
+import { checkPasswordAgainstPolicy, loginWithEmail, loginWithGoogle, logout, observeAuthState, registerWithEmail, reloadAuthenticatedUser, resetPassword, updateAuthenticatedUserDisplayName } from '@/services/auth.service'
 import type { AuthStatus } from '@/types/auth.types'
 import { getAuthErrorMessage } from '@/utils/auth-errors'
 
@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
   const initialized = ref(false)
   const localTransition = ref(false)
   const operationLoading = ref(false)
+  const identityUpdating = ref(false)
   const error = ref<string | null>(null)
   const observerError = ref<string | null>(null)
 
@@ -175,6 +176,41 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function updateDisplayName(displayName: string): Promise<boolean> {
+    const currentUser = user.value
+    if (!currentUser) return false
+
+    identityUpdating.value = true
+    error.value = null
+
+    try {
+      await updateAuthenticatedUserDisplayName(currentUser, displayName.trim())
+      triggerRef(user)
+      return true
+    } catch (caughtError) {
+      setAuthError(caughtError)
+      return false
+    } finally {
+      identityUpdating.value = false
+    }
+  }
+
+  async function refreshUser(): Promise<boolean> {
+    const currentUser = user.value
+    if (!currentUser) return false
+
+    error.value = null
+
+    try {
+      await reloadAuthenticatedUser(currentUser)
+      triggerRef(user)
+      return true
+    } catch (caughtError) {
+      setAuthError(caughtError)
+      return false
+    }
+  }
+
   function setCurrentUser(currentUser: User | null): void {
     user.value = currentUser ? markRaw(currentUser) : null
 
@@ -216,6 +252,7 @@ export const useAuthStore = defineStore('auth', () => {
     localTransition,
     authLoading,
     operationLoading,
+    identityUpdating,
     error,
     observerError,
     isAuthenticated,
@@ -227,5 +264,7 @@ export const useAuthStore = defineStore('auth', () => {
     signOut,
     sendPasswordReset,
     validateRegistrationPassword,
+    updateDisplayName,
+    refreshUser,
   }
 })

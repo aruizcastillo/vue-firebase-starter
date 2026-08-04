@@ -1,10 +1,10 @@
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
-import { createProfileSettingsSchema } from '@/schemas/profile-settings.schema'
+import { createIdentitySettingsSchema } from '@/schemas/identity-settings.schema'
 
-describe('profile settings schema', () => {
-  const schema = createProfileSettingsSchema('Name is too long.', 'Enter a different name.', () => 'Alex')
+describe('identity settings schema', () => {
+  const schema = createIdentitySettingsSchema('Name is too long.', 'Enter a different name.', () => 'Alex')
 
   it('allows an empty display name', () => {
     expect(v.safeParse(schema, { displayName: '   ' })).toMatchObject({

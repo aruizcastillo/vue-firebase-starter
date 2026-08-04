@@ -16,19 +16,13 @@
     "user": "User navigation",
     "authentication": "Authentication",
     "home": "Home",
-    "signIn": "Sign in",
     "signOut": "Sign out",
     "signingOut": "Signing out…",
     "login": "Login",
-    "loggingIn": "Logging in…",
-    "logout": "Logout",
-    "loggingOut": "Logging out…",
     "createAccount": "Create account",
     "signUp": "Sign up",
-    "accountSettings": "Account settings",
     "backToHome": "Back to home",
     "backToSignIn": "Back to sign in",
-    "backToLogin": "Back to login",
     "forgotPassword": "I forgot my password",
     "alreadyHaveAccount": "I already have an account"
   },
@@ -41,7 +35,6 @@
     "save": "Save",
     "saving": "Saving…",
     "retry": "Retry",
-    "retrying": "Retrying…",
     "sendEmail": "Send email",
     "sending": "Sending…",
     "sendVerificationLink": "Send verification link",
@@ -55,11 +48,11 @@
     "reactivating": "Reactivating…"
   },
   "welcome": {
-    "description": "A reusable Vue starter with Firebase authentication, user profiles, protected routes, and local emulators."
+    "description": "A reusable Vue starter with Firebase authentication, optional profiles, protected routes, and local emulators."
   },
   "home": {
     "greeting": "Hello, {name}",
-    "configured": "The authentication and profile are configured correctly."
+    "configured": "Authentication is configured correctly."
   },
   "session": {
     "restoringAuth": "Restoring your session…",
@@ -85,28 +78,9 @@
       "and": "and"
     }
   },
-  "profile": {
-    "updated": "Profile updated.",
-    "settings": "Profile",
-    "loading": "Loading profile…",
-    "changeEmail": "Change email address",
-    "emailIntro": "Your change must be confirmed from a verification link sent by Firebase.",
-    "emailPasswordHint": "For security, you must re-authenticate by entering your current password before Firebase sends the verification email.",
-    "emailGoogleHint": "For security, submitting this form opens a Google window. Sign in to your Google account again to re-authenticate before Firebase sends the verification email.",
-    "spamHint": "Check your spam or junk folder if the verification email is delayed.",
-    "emailSent": "We sent a verification link to the new address. Your email will change after you confirm it.",
-    "emailSynchronized": "Your Firebase email and profile have been synchronized.",
-    "changePassword": "Change password",
-    "changePasswordIntro": "Confirm your current password before choosing a new one.",
-    "passwordSecurityHint": "For security, entering your current password re-authenticates your account before the password is changed.",
-    "passwordChanged": "Your password has been changed.",
-    "deactivate": "Deactivate account",
-    "deactivateIntro": "Your account and data will be kept. You will be signed out and can reactivate the account after signing in again.",
-    "deactivateConfirm": "Deactivate your account? Your data will be preserved and you can reactivate it later.",
-    "accountDeactivated": "Account deactivated",
-    "accountSuspended": "Account suspended",
-    "suspendedDescription": "This account has been suspended. Contact support if you think this is a mistake.",
-    "deactivatedDescription": "This account is deactivated. Its data is preserved but is unavailable until you reactivate it."
+  "identity": {
+    "updated": "Personal information updated.",
+    "settings": "Personal information"
   },
   "account": {
     "settings": "Account settings",
@@ -117,7 +91,7 @@
     "emailGoogleHint": "For security, submitting this form opens a Google window. Sign in to your Google account again to re-authenticate before Firebase sends the verification email.",
     "spamHint": "Check your spam or junk folder if the verification email is delayed.",
     "emailSent": "We sent a verification link to the new address. Your email will change after you confirm it.",
-    "emailSynchronized": "Your Firebase email and profile have been synchronized.",
+    "emailRefreshed": "Your account information has been refreshed.",
     "changePassword": "Change password",
     "changePasswordIntro": "Confirm your current password before choosing a new one.",
     "passwordSecurityHint": "For security, entering your current password re-authenticates your account before the password is changed.",
