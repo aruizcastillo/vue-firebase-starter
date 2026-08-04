@@ -36,7 +36,7 @@ watch(locale, (value) => setLocale(value as SupportedLocale))
 
       <div class="flex items-center gap-8">
         <div class="flex items-center gap-4">
-          <Select v-model="theme" :aria-label="t('common.theme')">
+          <Select :key="locale" v-model="theme" :aria-label="t('common.theme')" size="sm">
             <SelectTrigger>
               <span class="sr-only">{{ t('common.theme') }}</span>
               <SwatchBook />
@@ -49,7 +49,7 @@ watch(locale, (value) => setLocale(value as SupportedLocale))
             </SelectContent>
           </Select>
 
-          <Select v-model="locale" :aria-label="t('common.language')">
+          <Select :key="locale" v-model="locale" :aria-label="t('common.language')" size="sm">
             <SelectTrigger>
               <span class="sr-only">{{ t('common.language') }}</span>
               <Languages />

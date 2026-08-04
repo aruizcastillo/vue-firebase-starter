@@ -62,10 +62,10 @@ async function handleLogout(): Promise<void> {
   </nav>
 
   <nav v-else class="flex w-full items-center justify-between gap-2 md:w-auto md:justify-start" :aria-label="t('navigation.authentication')">
-    <Button type="button" variant="outline" class="">
+    <Button type="button" variant="outline">
       <RouterLink :to="{ name: 'login' }">{{ t('navigation.login') }}</RouterLink>
     </Button>
-    <Button type="button" class="">
+    <Button type="button">
       <RouterLink :to="{ name: 'register' }">{{ t('navigation.signUp') }}</RouterLink>
     </Button>
   </nav>
