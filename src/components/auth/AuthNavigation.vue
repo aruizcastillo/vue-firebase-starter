@@ -26,9 +26,9 @@ async function handleLogout(): Promise<void> {
   <nav v-if="authStore.isAuthenticated" class="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start" :aria-label="t('navigation.user')">
     <DropdownMenu :modal="false">
       <DropdownMenuTrigger as-child>
-        <Item as="button" type="button" size="sm" class="w-max cursor-pointer p-0 group" :aria-label="t('navigation.user')">
+        <Item as="button" type="button" class="w-max cursor-pointer p-0 group" :aria-label="t('navigation.user')">
           <ItemMedia>
-            <Avatar class="size-9">
+            <Avatar class="size-10">
               <AvatarImage v-if="authStore.user?.photoURL" :src="authStore.user.photoURL" />
               <AvatarFallback v-else>
                 {{ userLabel.charAt(0) }}
@@ -37,7 +37,7 @@ async function handleLogout(): Promise<void> {
           </ItemMedia>
           <ItemContent>
             <ItemTitle>
-              <span class="max-w-23 truncate group-hover:opacity-85">{{ userLabel }}</span>
+              <span class="hidden sm:block max-w-23 truncate group-hover:opacity-85">{{ userLabel }}</span>
             </ItemTitle>
           </ItemContent>
         </Item>
