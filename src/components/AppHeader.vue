@@ -24,48 +24,48 @@ watch(locale, (value) => setLocale(value as SupportedLocale))
 </script>
 
 <template>
-  <template class="hidden md:block">
-    <header class="flex gap-6 p-4 flex-row items-center">
-      <div class="flex w-full flex-row items-center gap-8">
-        <RouterLink class="text-inherit font-bold no-underline" :to="homeLocation">{{ t('app.name') }}</RouterLink>
+  <header class="flex gap-6 p-4 flex-row items-center">
+    <div class="flex w-full flex-row items-center gap-8">
+      <RouterLink class="text-inherit font-bold no-underline" :to="homeLocation">{{ t('app.name') }}</RouterLink>
 
-        <nav v-if="authStore.isAuthenticated" class="flex items-center gap-4" :aria-label="t('navigation.main')">
-          <RouterLink :to="{ name: 'home' }">{{ t('navigation.home') }}</RouterLink>
-        </nav>
+      <nav v-if="authStore.isAuthenticated" class="hidden sm:flex items-center gap-4" :aria-label="t('navigation.main')">
+        <RouterLink :to="{ name: 'home' }">{{ t('navigation.home') }}</RouterLink>
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-8">
+      <div class="flex items-center gap-4">
+        <Select :key="locale" v-model="theme" :aria-label="t('common.theme')" size="sm">
+          <SelectTrigger>
+            <span class="sr-only">{{ t('common.theme') }}</span>
+            <SwatchBook />
+            <span class="hidden sm:block">
+              <SelectValue />
+            </span>
+          </SelectTrigger>
+          <SelectContent :body-lock="false">
+            <SelectItem value="system">{{ t('theme.system') }}</SelectItem>
+            <SelectItem value="light">{{ t('theme.light') }}</SelectItem>
+            <SelectItem value="dark">{{ t('theme.dark') }}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select :key="locale" v-model="locale" :aria-label="t('common.language')" size="sm">
+          <SelectTrigger>
+            <span class="sr-only">{{ t('common.language') }}</span>
+            <Languages />
+            <span class="hidden sm:block">
+              <SelectValue />
+            </span>
+          </SelectTrigger>
+          <SelectContent :body-lock="false">
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="es">Español</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div class="flex items-center gap-8">
-        <div class="flex items-center gap-4">
-          <Select :key="locale" v-model="theme" :aria-label="t('common.theme')" size="sm">
-            <SelectTrigger>
-              <span class="sr-only">{{ t('common.theme') }}</span>
-              <SwatchBook />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent :body-lock="false">
-              <SelectItem value="system">{{ t('theme.system') }}</SelectItem>
-              <SelectItem value="light">{{ t('theme.light') }}</SelectItem>
-              <SelectItem value="dark">{{ t('theme.dark') }}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select :key="locale" v-model="locale" :aria-label="t('common.language')" size="sm">
-            <SelectTrigger>
-              <span class="sr-only">{{ t('common.language') }}</span>
-              <Languages />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent :body-lock="false">
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="es">Español</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <AuthNavigation />
-      </div>
-    </header>
-  </template>
-
-  <template class="block md:hidden"></template>
+      <AuthNavigation />
+    </div>
+  </header>
 </template>
