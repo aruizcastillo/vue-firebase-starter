@@ -74,13 +74,11 @@ export function registerSessionReconciliation(router: Router, pinia: Pinia): voi
         if (redirect) await router.replace(redirect)
       },
     )
-  }
 
-  if (authConfig.requiresAccountStatus) {
     watch(
-      () => profileStore.connectionState,
-      async (connectionState, previousConnectionState) => {
-        if (connectionState !== 'error' || previousConnectionState !== 'ready' || !router.currentRoute.value.name) return
+      () => profileStore.state,
+      async (state, previousState) => {
+        if (state !== 'error' || previousState !== 'ready' || !router.currentRoute.value.name) return
 
         const currentRoute = router.currentRoute.value
         if (currentRoute.name !== 'session-error') {

@@ -55,14 +55,14 @@ describe('profile store', () => {
     const store = useProfileStore()
     const connection = store.connect(createUser('alice'))
 
-    expect(store.connectionState).toBe('connecting')
+    expect(store.state).toBe('connecting')
     await waitForListener(0)
     listeners[0]!.next(createProfile('alice'))
 
     await expect(connection).resolves.toBe(true)
     expect(profileMocks.ensureUserProfile).toHaveBeenCalledWith('alice')
     expect(store.profile).toEqual(createProfile('alice'))
-    expect(store.connectionState).toBe('ready')
+    expect(store.state).toBe('ready')
   })
 
   it('deduplicates concurrent connections for the same user', async () => {
@@ -84,7 +84,7 @@ describe('profile store', () => {
 
     await expect(store.connect(createUser('alice'))).resolves.toBe(false)
     expect(store.profile).toBeNull()
-    expect(store.connectionState).toBe('error')
+    expect(store.state).toBe('error')
   })
 
   it('fails closed when full mode receives a document without status', async () => {
@@ -94,7 +94,7 @@ describe('profile store', () => {
     listeners[0]!.next({ ...createProfile('alice'), status: null })
 
     await expect(connection).resolves.toBe(false)
-    expect(store.connectionState).toBe('error')
+    expect(store.state).toBe('error')
     expect(store.profile).toBeNull()
   })
 
@@ -110,7 +110,7 @@ describe('profile store', () => {
     await connectStore(store, createUser('alice'))
     listeners[0]!.error(new FirebaseError('unavailable', 'Offline'))
     expect(store.profile).toBeNull()
-    expect(store.connectionState).toBe('error')
+    expect(store.state).toBe('error')
   })
 
   it('unsubscribes and settles a pending connection on disconnect', async () => {

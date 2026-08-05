@@ -39,12 +39,12 @@ export const useSessionStore = defineStore('session', () => {
 
   if (authConfig.requiresAccountStatus) {
     watch(
-      () => profileStore.connectionState,
-      (connectionState) => {
-        if (connectionState !== 'error' || !authStore.user) return
+      () => profileStore.state,
+      (state) => {
+        if (state !== 'error' || !authStore.user) return
 
         phase.value = 'error'
-        error.value = profileStore.connectionError
+        error.value = profileStore.error
       },
       { flush: 'sync' },
     )
@@ -123,7 +123,7 @@ export const useSessionStore = defineStore('session', () => {
         if (!authStore.initialized || authStore.observerError) {
           resolvedUserId = unresolvedUser
           phase.value = 'error'
-          error.value = authStore.observerError ?? authStore.error
+          error.value = authStore.observerError ?? authStore.operationError
           return false
         }
 
@@ -133,7 +133,7 @@ export const useSessionStore = defineStore('session', () => {
 
         if (!succeeded) {
           phase.value = 'error'
-          error.value = profileStore.connectionError
+          error.value = profileStore.error
           return false
         }
 
@@ -144,7 +144,7 @@ export const useSessionStore = defineStore('session', () => {
     } catch {
       resolvedUserId = unresolvedUser
       phase.value = 'error'
-      error.value = authStore.observerError ?? authStore.error
+      error.value = authStore.observerError ?? authStore.operationError
       return false
     }
   }

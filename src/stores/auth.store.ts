@@ -16,7 +16,9 @@ export const useAuthStore = defineStore('auth', () => {
   const localTransition = ref(false)
   const operationLoading = ref(false)
   const identityUpdating = ref(false)
-  const error = ref<string | null>(null)
+  // Operation errors are intended for forms and user-triggered actions; observerError
+  // is reserved for failures from the Firebase Auth state observer.
+  const operationError = ref<string | null>(null)
   const observerError = ref<string | null>(null)
 
   let initializationPromise: Promise<void> | null = null
@@ -33,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   function clearError(): void {
-    error.value = null
+    operationError.value = null
   }
 
   function initialize(): Promise<void> {
@@ -47,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     authStatus.value = 'restoring'
 
-    error.value = null
+    operationError.value = null
     observerError.value = null
 
     unsubscribeFromAuth?.()
@@ -69,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
           unsubscribeFromAuth?.()
           unsubscribeFromAuth = null
           setAuthError(caughtError)
-          observerError.value = error.value
+          observerError.value = operationError.value
           authStatus.value = user.value ? 'authenticated' : 'unauthenticated'
           const initializationPending = !initialized.value
           initialized.value = false
@@ -102,7 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function authenticate(operation: () => Promise<UserCredential>): Promise<boolean> {
     localTransition.value = true
     authStatus.value = 'authenticating'
-    error.value = null
+    operationError.value = null
 
     try {
       if (!initialized.value) await initialize()
@@ -124,7 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function signOut(): Promise<boolean> {
     localTransition.value = true
     authStatus.value = 'signing-out'
-    error.value = null
+    operationError.value = null
 
     try {
       if (!initialized.value) await initialize()
@@ -145,7 +147,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function sendPasswordReset(email: string): Promise<boolean> {
     operationLoading.value = true
-    error.value = null
+    operationError.value = null
 
     try {
       await resetPassword(email)
@@ -164,7 +166,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function validateRegistrationPassword(password: string): Promise<PasswordValidationStatus | null> {
     operationLoading.value = true
-    error.value = null
+    operationError.value = null
 
     try {
       return await checkPasswordAgainstPolicy(password)
@@ -181,7 +183,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!currentUser) return false
 
     identityUpdating.value = true
-    error.value = null
+    operationError.value = null
 
     try {
       await updateAuthenticatedUserDisplayName(currentUser, displayName.trim())
@@ -199,7 +201,7 @@ export const useAuthStore = defineStore('auth', () => {
     const currentUser = user.value
     if (!currentUser) return false
 
-    error.value = null
+    operationError.value = null
 
     try {
       await reloadAuthenticatedUser(currentUser)
@@ -238,7 +240,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function setAuthError(caughtError: unknown): void {
-    error.value = getAuthErrorMessage(caughtError)
+    operationError.value = getAuthErrorMessage(caughtError)
   }
 
   function isFirebaseErrorWithCode(caughtError: unknown, code: string): boolean {
@@ -253,7 +255,7 @@ export const useAuthStore = defineStore('auth', () => {
     authLoading,
     operationLoading,
     identityUpdating,
-    error,
+    operationError,
     observerError,
     isAuthenticated,
     clearError,

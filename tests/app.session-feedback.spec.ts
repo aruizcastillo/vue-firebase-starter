@@ -29,7 +29,7 @@ describe('application session feedback', () => {
   it('keeps the active route mounted under loading and error feedback', async () => {
     installLocalStorage()
 
-    const [{ default: App }, { i18n }, { useSessionStore }] = await Promise.all([import('@/App.vue'), import('@/i18n'), import('@/stores/session.store')])
+    const [{ default: App }, { i18n }, { useAuthStore }, { useSessionStore }] = await Promise.all([import('@/App.vue'), import('@/i18n'), import('@/stores/auth.store'), import('@/stores/session.store')])
     const unmounted = vi.fn()
     const RoutePage = defineComponent({
       setup() {
@@ -42,6 +42,7 @@ describe('application session feedback', () => {
       routes: [{ path: '/login', component: RoutePage }],
     })
     const pinia = createPinia()
+    const authStore = useAuthStore(pinia)
     const sessionStore = useSessionStore(pinia)
     sessionStore.phase = 'ready'
 
@@ -51,6 +52,11 @@ describe('application session feedback', () => {
     const wrapper = mount(App, {
       global: { plugins: [pinia, i18n, router] },
     })
+
+    expect(wrapper.find('[data-test="route-page"]').exists()).toBe(false)
+
+    authStore.initialized = true
+    await nextTick()
 
     expect(wrapper.get('[data-test="route-page"]').exists()).toBe(true)
 
@@ -84,7 +90,13 @@ describe('application session feedback', () => {
     const sessionStore = useSessionStore(pinia)
     sessionStore.phase = 'error'
     sessionStore.error = 'Profile unavailable'
-    vi.spyOn(sessionStore, 'retry').mockResolvedValue(true)
+    let resolveRetry!: (succeeded: boolean) => void
+    vi.spyOn(sessionStore, 'retry').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRetry = resolve
+        }),
+    )
 
     await router.push('/session-error?redirect=/account/settings')
     await router.isReady()
@@ -94,6 +106,11 @@ describe('application session feedback', () => {
     })
 
     await wrapper.get('button').trigger('click')
+    await nextTick()
+
+    expect(wrapper.get('[role="status"]').text()).toContain('Preparing your session')
+
+    resolveRetry(true)
     await flushPromises()
 
     expect(sessionStore.retry).toHaveBeenCalledOnce()

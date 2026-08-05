@@ -63,6 +63,7 @@
   "session": {
     "restoringAuth": "Restaurando tu sesión…",
     "loadingProfile": "Cargando tu perfil…",
+    "preparing": "Preparando tu sesión…",
     "errorTitle": "No hemos podido iniciar tu sesión",
     "errorDescription": "Comprueba tu conexión e inténtalo de nuevo, o cierra sesión."
   },
