@@ -135,7 +135,7 @@ describe('auth store', () => {
     authMocks.resetPassword.mockRejectedValue(new FirebaseError('auth/user-not-found', 'Unknown user'))
 
     await expect(store.sendPasswordReset('missing@example.com')).resolves.toBe(true)
-    expect(store.error).toBeNull()
+    expect(store.operationError).toBeNull()
   })
 
   it('returns the password policy reported by Firebase', async () => {
@@ -144,7 +144,7 @@ describe('auth store', () => {
     authMocks.checkPasswordAgainstPolicy.mockResolvedValue(status)
 
     await expect(store.validateRegistrationPassword('ValidPassword1!')).resolves.toBe(status)
-    expect(store.error).toBeNull()
+    expect(store.operationError).toBeNull()
   })
 
   it('updates the Auth display name without a Firestore dependency', async () => {

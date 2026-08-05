@@ -17,14 +17,20 @@ const sessionStore = useSessionStore()
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const navigating = ref(false)
+const isPreparingSession = ref(false)
 
-const visible = computed(() => sessionStore.isBlocking || navigating.value)
-const showError = computed(() => sessionStore.phase === 'error' && !navigating.value)
-const loadingMessage = computed(() => (sessionStore.phase === 'restoring-auth' ? t('session.restoringAuth') : t('session.loadingProfile')))
+const visible = computed(() => sessionStore.isBlocking || isPreparingSession.value)
+const showError = computed(() => sessionStore.phase === 'error' && !isPreparingSession.value)
+const loadingMessage = computed(() => {
+  if (isPreparingSession.value) return t('session.preparing')
+  if (sessionStore.phase === 'restoring-auth') return t('session.restoringAuth')
+  if (sessionStore.phase === 'loading-profile') return t('session.loadingProfile')
+
+  return ''
+})
 
 async function retry(): Promise<void> {
-  navigating.value = true
+  isPreparingSession.value = true
 
   try {
     const succeeded = await sessionStore.retry()
@@ -34,12 +40,12 @@ async function retry(): Promise<void> {
       await router.replace(redirect ?? (authStore.user ? { name: 'home' } : { name: 'welcome' }))
     }
   } finally {
-    navigating.value = false
+    isPreparingSession.value = false
   }
 }
 
 async function signOut(): Promise<void> {
-  navigating.value = true
+  isPreparingSession.value = true
 
   try {
     if (await authStore.signOut()) {
@@ -47,7 +53,7 @@ async function signOut(): Promise<void> {
       await router.replace({ name: 'welcome' })
     }
   } finally {
-    navigating.value = false
+    isPreparingSession.value = false
   }
 }
 </script>

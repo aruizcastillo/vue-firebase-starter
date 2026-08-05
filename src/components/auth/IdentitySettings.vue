@@ -41,7 +41,7 @@ const handleSubmit: SubmitHandler<typeof identitySettingsSchema> = async ({ disp
   if (updated) {
     toast.success(t('identity.updated'))
   } else {
-    const errorMessage = authStore.error ?? t('errors.operationFailed')
+    const errorMessage = authStore.operationError ?? t('errors.operationFailed')
     setErrors(identitySettingsForm, { errors: [errorMessage] })
     toast.error(errorMessage)
   }

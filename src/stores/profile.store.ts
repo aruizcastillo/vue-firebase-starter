@@ -5,88 +5,88 @@ import { defineStore } from 'pinia'
 
 import { authConfig } from '@/config/auth.config'
 import { ensureUserProfile, getUserProfile, observeUserProfile, setUserAccountStatus } from '@/services/profile.service'
-import type { ProfileConnectionState, UserAccountStatus, UserProfile } from '@/types/profile.types'
+import type { ProfileOperationState, UserAccountStatus, UserProfile } from '@/types/profile.types'
 import { getProfileErrorMessage } from '@/utils/profile-errors'
 import { i18n } from '@/i18n'
 
 export const useProfileStore = defineStore('profile', () => {
   const profile = ref<UserProfile | null>(null)
-  const connectionState = ref<ProfileConnectionState>('idle')
-  const connectionError = ref<string | null>(null)
+  const state = ref<ProfileOperationState>('idle')
+  const error = ref<string | null>(null)
   const operationError = ref<string | null>(null)
   const updating = ref(false)
 
   let activeUserId: string | null = null
-  let connectionGeneration = 0
-  let connectionPromise: Promise<boolean> | null = null
-  let connectionResolver: ((succeeded: boolean) => void) | null = null
+  let operationGeneration = 0
+  let activeOperation: Promise<boolean> | null = null
+  let operationResolver: ((succeeded: boolean) => void) | null = null
   let unsubscribe: Unsubscribe | null = null
 
-  const loading = computed(() => connectionState.value === 'connecting')
+  const loading = computed(() => state.value === 'connecting')
 
   function load(currentUser: User): Promise<boolean> {
-    return startProfileOperation(currentUser, loadProfile)
+    return startOperation(currentUser, loadProfile)
   }
 
   function connect(currentUser: User): Promise<boolean> {
-    return startProfileOperation(currentUser, establishConnection)
+    return startOperation(currentUser, establishConnection)
   }
 
-  function startProfileOperation(currentUser: User, operation: (currentUser: User, currentGeneration: number) => Promise<boolean>): Promise<boolean> {
-    if (activeUserId === currentUser.uid && connectionState.value === 'ready' && profile.value) {
+  function startOperation(currentUser: User, operation: (currentUser: User, currentGeneration: number) => Promise<boolean>): Promise<boolean> {
+    if (activeUserId === currentUser.uid && state.value === 'ready' && profile.value) {
       return Promise.resolve(true)
     }
 
-    if (activeUserId === currentUser.uid && connectionPromise) {
-      return connectionPromise
+    if (activeUserId === currentUser.uid && activeOperation) {
+      return activeOperation
     }
 
     disconnect()
 
     activeUserId = currentUser.uid
-    const currentGeneration = ++connectionGeneration
-    connectionState.value = 'connecting'
-    connectionError.value = null
+    const currentGeneration = ++operationGeneration
+    state.value = 'connecting'
+    error.value = null
     operationError.value = null
 
-    const activeConnection = operation(currentUser, currentGeneration)
-    connectionPromise = activeConnection
+    const currentOperation = operation(currentUser, currentGeneration)
+    activeOperation = currentOperation
 
-    void activeConnection.finally(() => {
-      if (connectionPromise === activeConnection) {
-        connectionPromise = null
+    void currentOperation.finally(() => {
+      if (activeOperation === currentOperation) {
+        activeOperation = null
       }
     })
 
-    return activeConnection
+    return currentOperation
   }
 
   async function loadProfile(currentUser: User, currentGeneration: number): Promise<boolean> {
     try {
       await ensureUserProfile(currentUser.uid)
 
-      if (!isCurrentConnection(currentUser.uid, currentGeneration)) return false
+      if (!isCurrentOperation(currentUser.uid, currentGeneration)) return false
 
       const loadedProfile = await getUserProfile(currentUser.uid)
-      if (!isCurrentConnection(currentUser.uid, currentGeneration)) return false
+      if (!isCurrentOperation(currentUser.uid, currentGeneration)) return false
 
       if (!loadedProfile) {
-        failConnection(new Error('profile-creation-failed'))
+        failOperation(new Error('profile-creation-failed'))
         return false
       }
 
       if (authConfig.requiresAccountStatus && !loadedProfile.status) {
-        failConnection(new Error('invalid-profile-document'))
+        failOperation(new Error('invalid-profile-document'))
         return false
       }
 
       profile.value = loadedProfile
-      connectionState.value = 'ready'
-      connectionError.value = null
+      state.value = 'ready'
+      error.value = null
       return true
     } catch (caughtError) {
-      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
-        failConnection(caughtError)
+      if (isCurrentOperation(currentUser.uid, currentGeneration)) {
+        failOperation(caughtError)
       }
 
       return false
@@ -97,12 +97,12 @@ export const useProfileStore = defineStore('profile', () => {
     try {
       await ensureUserProfile(currentUser.uid)
 
-      if (!isCurrentConnection(currentUser.uid, currentGeneration)) return false
+      if (!isCurrentOperation(currentUser.uid, currentGeneration)) return false
 
       return await waitForFirstSnapshot(currentUser.uid, currentGeneration)
     } catch (caughtError) {
-      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
-        failConnection(caughtError)
+      if (isCurrentOperation(currentUser.uid, currentGeneration)) {
+        failOperation(caughtError)
       }
 
       return false
@@ -113,45 +113,45 @@ export const useProfileStore = defineStore('profile', () => {
     return new Promise((resolve) => {
       let settled = false
 
-      connectionResolver = (succeeded) => {
+      operationResolver = (succeeded) => {
         if (settled) return
         settled = true
-        connectionResolver = null
+        operationResolver = null
         resolve(succeeded)
       }
 
       unsubscribe = observeUserProfile(
         userId,
         (observedProfile) => {
-          if (!isCurrentConnection(userId, currentGeneration)) return
+          if (!isCurrentOperation(userId, currentGeneration)) return
 
           if (!observedProfile) {
             unsubscribe?.()
             unsubscribe = null
-            failConnection(new Error('profile-creation-failed'))
-            connectionResolver?.(false)
+            failOperation(new Error('profile-creation-failed'))
+            operationResolver?.(false)
             return
           }
 
           if (authConfig.requiresAccountStatus && !observedProfile.status) {
             unsubscribe?.()
             unsubscribe = null
-            failConnection(new Error('invalid-profile-document'))
-            connectionResolver?.(false)
+            failOperation(new Error('invalid-profile-document'))
+            operationResolver?.(false)
             return
           }
 
           profile.value = observedProfile
-          connectionState.value = 'ready'
-          connectionError.value = null
-          connectionResolver?.(true)
+          state.value = 'ready'
+          error.value = null
+          operationResolver?.(true)
         },
         (caughtError) => {
-          if (!isCurrentConnection(userId, currentGeneration)) return
+          if (!isCurrentOperation(userId, currentGeneration)) return
 
           unsubscribe = null
-          failConnection(caughtError)
-          connectionResolver?.(false)
+          failOperation(caughtError)
+          operationResolver?.(false)
         },
       )
     })
@@ -163,55 +163,55 @@ export const useProfileStore = defineStore('profile', () => {
       return false
     }
 
-    const currentGeneration = connectionGeneration
+    const currentGeneration = operationGeneration
     updating.value = true
     operationError.value = null
 
     try {
       await setUserAccountStatus(currentUser.uid, status)
-      return isCurrentConnection(currentUser.uid, currentGeneration)
+      return isCurrentOperation(currentUser.uid, currentGeneration)
     } catch (caughtError) {
-      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
+      if (isCurrentOperation(currentUser.uid, currentGeneration)) {
         operationError.value = getProfileErrorMessage(caughtError)
       }
 
       return false
     } finally {
-      if (isCurrentConnection(currentUser.uid, currentGeneration)) {
+      if (isCurrentOperation(currentUser.uid, currentGeneration)) {
         updating.value = false
       }
     }
   }
 
   function disconnect(): void {
-    ++connectionGeneration
+    ++operationGeneration
     unsubscribe?.()
     unsubscribe = null
-    connectionResolver?.(false)
-    connectionResolver = null
-    connectionPromise = null
+    operationResolver?.(false)
+    operationResolver = null
+    activeOperation = null
     activeUserId = null
     profile.value = null
-    connectionState.value = 'idle'
-    connectionError.value = null
+    state.value = 'idle'
+    error.value = null
     operationError.value = null
     updating.value = false
   }
 
-  function failConnection(caughtError: unknown): void {
+  function failOperation(caughtError: unknown): void {
     profile.value = null
-    connectionState.value = 'error'
-    connectionError.value = getProfileErrorMessage(caughtError)
+    state.value = 'error'
+    error.value = getProfileErrorMessage(caughtError)
   }
 
-  function isCurrentConnection(userId: string, currentGeneration: number): boolean {
-    return activeUserId === userId && connectionGeneration === currentGeneration
+  function isCurrentOperation(userId: string, currentGeneration: number): boolean {
+    return activeUserId === userId && operationGeneration === currentGeneration
   }
 
   return {
     profile,
-    connectionState,
-    connectionError,
+    state,
+    error,
     operationError,
     loading,
     updating,

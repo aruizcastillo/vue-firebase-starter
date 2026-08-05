@@ -63,6 +63,7 @@
   "session": {
     "restoringAuth": "Restoring your session…",
     "loadingProfile": "Loading your profile…",
+    "preparing": "Preparing your session…",
     "errorTitle": "We could not start your session",
     "errorDescription": "Check your connection and try again, or sign out."
   },

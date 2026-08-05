@@ -52,7 +52,7 @@ async function handleGoogleLogin(): Promise<void> {
 }
 
 function showAuthError(): void {
-  const errorMessage = authStore.error ?? t('errors.operationFailed')
+  const errorMessage = authStore.operationError ?? t('errors.operationFailed')
   setErrors(loginForm, { errors: [errorMessage] })
   toast.error(errorMessage)
 }

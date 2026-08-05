@@ -41,7 +41,7 @@ const handleSubmit: SubmitHandler<typeof passwordResetSchema> = async ({ email }
     return
   }
 
-  const errorMessage = authStore.error ?? t('errors.operationFailed')
+  const errorMessage = authStore.operationError ?? t('errors.operationFailed')
   setErrors(passwordResetForm, { errors: [errorMessage] })
   toast.error(errorMessage)
 }

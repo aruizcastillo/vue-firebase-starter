@@ -16,8 +16,4 @@
   h3 {
     @apply font-heading;
   }
-
-  body {
-    @apply transition-all;
-  }
 }
