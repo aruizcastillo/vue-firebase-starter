@@ -5,10 +5,9 @@ import { useI18n } from 'vue-i18n'
 
 import { useAuthStore } from '@/stores/auth.store'
 
-import { Item, ItemMedia, ItemContent, ItemTitle } from '@/components/ui/item'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -23,32 +22,31 @@ async function handleLogout(): Promise<void> {
 </script>
 
 <template>
-  <nav v-if="authStore.isAuthenticated" class="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start" :aria-label="t('navigation.user')">
+  <nav v-if="authStore.isAuthenticated" class="flex w-full items-center justify-between gap-4" :aria-label="t('navigation.user')">
     <DropdownMenu :modal="false">
       <DropdownMenuTrigger as-child>
-        <Item as="button" type="button" class="w-max cursor-pointer p-0 group" :aria-label="t('navigation.user')">
-          <ItemMedia>
-            <Avatar class="size-10">
-              <AvatarImage v-if="authStore.user?.photoURL" :src="authStore.user.photoURL" />
-              <AvatarFallback v-else>
-                {{ userLabel.charAt(0) }}
-              </AvatarFallback>
-            </Avatar>
-          </ItemMedia>
-          <ItemContent>
-            <ItemTitle>
-              <span class="hidden sm:block max-w-23 truncate group-hover:opacity-85">{{ userLabel }}</span>
-            </ItemTitle>
-          </ItemContent>
-        </Item>
+        <button type="button" :aria-label="t('navigation.user')">
+          <Avatar class="size-10 hover:ring-2 hover:ring-primary">
+            <AvatarImage :src="authStore.user?.photoURL ?? ''" :alt="userLabel" />
+            <AvatarFallback>
+              {{ userLabel.charAt(0) }}
+            </AvatarFallback>
+          </Avatar>
+        </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent :align="'center'">
+      <DropdownMenuContent align="end">
         <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            <span class="truncate text-nowrap text-muted-foreground">
+              {{ userLabel }}
+            </span>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
           <DropdownMenuItem>
             <RouterLink class="block max-w-64 truncate text-inherit" :to="{ name: 'account-settings' }">{{ t('account.settings') }}</RouterLink>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout">
+            <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout" class="text-destructive">
               {{ authStore.authStatus === 'signing-out' ? t('navigation.signingOut') : t('navigation.signOut') }}
             </button>
           </DropdownMenuItem>
@@ -57,11 +55,11 @@ async function handleLogout(): Promise<void> {
     </DropdownMenu>
   </nav>
 
-  <nav v-else class="flex w-full items-center justify-between gap-2 md:w-auto md:justify-start" :aria-label="t('navigation.authentication')">
-    <Button type="button" variant="outline">
+  <nav v-else class="flex w-full items-center justify-between gap-2" :aria-label="t('navigation.authentication')">
+    <Button asChild type="button" variant="outline">
       <RouterLink :to="{ name: 'login' }">{{ t('navigation.login') }}</RouterLink>
     </Button>
-    <Button type="button">
+    <Button asChild type="button">
       <RouterLink :to="{ name: 'register' }">{{ t('navigation.signUp') }}</RouterLink>
     </Button>
   </nav>
