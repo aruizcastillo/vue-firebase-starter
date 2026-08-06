@@ -4,7 +4,7 @@ Starter for Vue applications using Firebase Authentication and
 Cloud Firestore. Use it as the foundation for a derived
 project, then connect it to its own Firebase environment.
 
-## What's included
+## Included
 
 - Vue, TypeScript, Vue Router, Pinia, Vue-i18n, Tailwind CSS, shadcn-vue, Formisch and Valibot.
 - English and Spanish interface translations.
@@ -14,7 +14,7 @@ project, then connect it to its own Firebase environment.
 - Optional private Firestore profiles for authenticated users.
 - Firebase Auth and Firestore emulators, unit tests, and Firestore Security Rules tests.
 
-## Architecture at a glance
+## Architecture
 
 Firebase Authentication is the sole source for identity: UID, email, display
 name, photo URL, providers, and verification state. The starter never copies
