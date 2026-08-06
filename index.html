@@ -4,23 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Reusable Vue SPA starter with Firebase Authentication and Cloud Firestore." />
-    <title>Vue + Firebase Starter</title>
+    <title>{{ $t('app.name') }}</title>
     <script>
       ;(() => {
+        // Setting the theme early to avoid a flash or incorrect theme on page load.
         let storedTheme = null
+        // Setting the document language early for accessibility and browser semantics.
+        let storedLocale = null
 
         try {
           storedTheme = localStorage.getItem('theme')
+          storedLocale = localStorage.getItem('locale')
         } catch {
           // Storage can be unavailable in private browsing contexts.
         }
 
+        // Add new themes or locales here if you add them to the app.
         const theme = ['system', 'light', 'dark'].includes(storedTheme) ? storedTheme : 'system'
         const systemTheme = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
         const resolvedTheme = theme === 'system' ? systemTheme : theme
+        const browserLocale = navigator.language.split('-')[0]
+        const locale = ['en', 'es'].includes(storedLocale) ? storedLocale : ['en', 'es'].includes(browserLocale) ? browserLocale : 'en'
 
         document.documentElement.dataset.theme = resolvedTheme
         document.documentElement.style.colorScheme = resolvedTheme
+        document.documentElement.lang = locale
       })()
     </script>
   </head>

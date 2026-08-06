@@ -9,6 +9,12 @@ export type SupportedLocale = (typeof supportedLocales)[number]
 const DEFAULT_LOCALE: SupportedLocale = 'en'
 const LOCALE_STORAGE_KEY = 'locale'
 
+function setDocumentLanguage(locale: SupportedLocale): void {
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = locale
+  }
+}
+
 function getInitialLocale(): SupportedLocale {
   if (typeof window === 'undefined') {
     return DEFAULT_LOCALE
@@ -25,9 +31,13 @@ function getInitialLocale(): SupportedLocale {
   return supportedLocales.includes(browserLocale as SupportedLocale) ? (browserLocale as SupportedLocale) : DEFAULT_LOCALE
 }
 
+const initialLocale = getInitialLocale()
+
+setDocumentLanguage(initialLocale)
+
 export const i18n = createI18n({
   legacy: false,
-  locale: getInitialLocale(),
+  locale: initialLocale,
   fallbackLocale: DEFAULT_LOCALE,
   messages: {
     en,
@@ -37,6 +47,7 @@ export const i18n = createI18n({
 
 export function setLocale(locale: SupportedLocale): void {
   i18n.global.locale.value = locale
+  setDocumentLanguage(locale)
 
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
