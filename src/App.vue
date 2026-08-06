@@ -34,5 +34,5 @@ const appReady = computed(() => {
   </div>
 
   <SessionFeedbackOverlay v-if="appReady" />
-  <Toaster />
+  <Toaster position="top-center" />
 </template>
