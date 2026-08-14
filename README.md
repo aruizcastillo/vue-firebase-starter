@@ -7,7 +7,7 @@ project, then connect it to its own Firebase environment.
 ## Included
 
 - Vue, TypeScript, Vue Router, Pinia, Vue-i18n, Tailwind CSS, shadcn-vue, Formisch and Valibot.
-- English and Spanish interface translations.
+- Configured interface translations, English and Spanish already included.
 - Email/password and Google authentication.
 - Registration, password reset and change, verified email change, and optional account deactivation.
 - Protected, public, guest-only, and optional restricted-account routes.
