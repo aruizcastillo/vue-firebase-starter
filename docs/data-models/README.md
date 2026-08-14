@@ -10,8 +10,8 @@ belongs to Firebase Auth; Firestore stores only application-owned data.
 | --------------------------------- | -------------------------------------------------------------- |
 | Firebase Auth `User`              | Signed-in identity and provider data.                          |
 | `src/services/auth.service.ts`    | Operations that modify Auth identity or credentials.           |
+| `src/models/profile.model.ts`     | Profile shape and defaults for newly created documents.        |
 | `src/services/profile.service.ts` | Reads and writes the private `users/{uid}` Firestore document. |
-| `src/types/profile.types.ts`      | Client representation of that Firestore document.              |
 | `firestore.rules*`                | Exact fields and operations accepted from Firestore clients.   |
 | `src/i18n/index.ts`               | Interface-language persistence in browser storage.             |
 
@@ -71,8 +71,9 @@ not contain `email`, `displayName`, or `photoURL`.
 
 This metadata-only record is a clean extension point for private fields owned
 by a derived application, such as onboarding preferences or an
-application-specific username. Adding fields requires coordinated changes to
-the service, TypeScript type, rules, tests, and this document.
+application-specific username. Add them to `src/models/profile.model.ts` and
+their defaults to `createUserProfile()`, then update the matching Rules, tests,
+and this document. The service deliberately has no field-level creation logic.
 
 The session does not create, read, or observe this document in profile mode. A
 feature calls `profileStore.load(user)` when it needs the profile; that action
@@ -141,9 +142,8 @@ These values are not persisted application records:
 
 When changing persisted data:
 
-1. Update the owning service and snapshot mapper.
-2. Update the TypeScript model.
-3. Update every applicable Firestore rule variant with exact validation.
-4. Add emulator tests for ownership, types, required fields, schema pollution,
+1. Update `src/models/profile.model.ts` (shape and creation defaults).
+2. Update every applicable Firestore rule variant with exact validation.
+3. Add emulator tests for ownership, types, required fields, schema pollution,
    timestamp manipulation, and update bypasses.
-5. Update this inventory and the authentication architecture documentation.
+4. Update this inventory and the authentication architecture documentation.

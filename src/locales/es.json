@@ -54,7 +54,7 @@
     "reactivating": "Reactivando…"
   },
   "welcome": {
-    "description": "Una plantilla reutilizable de Vue con autenticación de Firebase, perfiles opcionales, rutas protegidas y emuladores locales."
+    "description": "Una plantilla inicial para crear SPAs con Vue, Firebase Authentication, Cloud Firestore, i18n y shadcn-vue."
   },
   "home": {
     "greeting": "Hola, {name}",

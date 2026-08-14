@@ -37,5 +37,4 @@ const homeLocation = computed(() => {
     </div>
   </header>
 </template>
-dd2c00ff
-ffc400ff
+dd2c00ff ffc400ff

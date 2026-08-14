@@ -54,7 +54,7 @@
     "reactivating": "Reactivating…"
   },
   "welcome": {
-    "description": "A reusable Vue starter with Firebase authentication, optional profiles, protected routes, and local emulators."
+    "description": "A starter template for building Vue SPAs with Firebase Authentication, Cloud Firestore, i18n, and shadcn-vue."
   },
   "home": {
     "greeting": "Hello, {name}",

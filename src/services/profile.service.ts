@@ -1,9 +1,8 @@
 import { doc, getDoc, onSnapshot, runTransaction, serverTimestamp, updateDoc, type DocumentSnapshot, type Unsubscribe } from 'firebase/firestore'
 
-import { authConfig } from '@/config/auth.config'
 import { db } from '@/firebase/firestore'
 
-import type { UserAccountStatus, UserProfile } from '@/types/profile.types'
+import { createUserProfile, type UserAccountStatus, type UserProfile } from '@/models/profile.model'
 
 function getUserReference(userId: string) {
   return doc(db, 'users', userId)
@@ -14,11 +13,12 @@ function mapUserProfile(snapshot: DocumentSnapshot): UserProfile {
   if (!data) throw new Error('profile-not-found')
 
   return {
+    ...data,
     id: snapshot.id,
     status: data.status === 'active' || data.status === 'deactivated' || data.status === 'suspended' ? data.status : null,
     createdAt: data.createdAt ?? null,
     updatedAt: data.updatedAt ?? null,
-  }
+  } as UserProfile
 }
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
@@ -33,11 +33,7 @@ export async function ensureUserProfile(userId: string): Promise<void> {
     const snapshot = await transaction.get(reference)
     if (snapshot.exists()) return
 
-    transaction.set(reference, {
-      ...(authConfig.requiresAccountStatus ? { status: 'active' as const } : {}),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    })
+    transaction.set(reference, createUserProfile())
   })
 }
 

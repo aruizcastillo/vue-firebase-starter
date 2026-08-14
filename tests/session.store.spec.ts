@@ -30,7 +30,7 @@ vi.mock('@/services/profile.service', () => profileMocks)
 import { useAuthStore } from '@/stores/auth.store'
 import { useProfileStore } from '@/stores/profile.store'
 import { useSessionStore } from '@/stores/session.store'
-import type { UserProfile } from '@/types/profile.types'
+import type { UserProfile } from '@/models/profile.model'
 
 type AuthStateCallback = (user: User | null) => void
 type AuthErrorCallback = (error: Error) => void
