@@ -31,7 +31,7 @@ vi.mock('@/services/profile.service', () => profileMocks)
 
 import { registerSessionReconciliation } from '@/router/guards'
 import { useSessionStore } from '@/stores/session.store'
-import type { UserProfile } from '@/types/profile.types'
+import type { UserProfile } from '@/models/profile.model'
 
 let authStateCallback: (user: User | null) => void
 let profileNext: (profile: UserProfile | null) => void

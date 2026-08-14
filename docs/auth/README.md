@@ -72,11 +72,24 @@ safe localized messages.
 Profiles are enabled in `profile` and `full` modes, but they have different
 lifecycle requirements.
 
+The profile boundary is intentionally small:
+
+```text
+src/models/profile.model.ts   -> shape and creation defaults
+src/services/profile.service.ts -> Firestore persistence
+src/stores/profile.store.ts   -> state, concurrency, and lifecycle
+src/stores/session.store.ts   -> session orchestration
+```
+
+Derived projects customize the profile in `src/models/profile.model.ts` and
+update the matching Firestore Rules and tests; they do not need to change the
+store lifecycle.
+
 In profile mode, a feature explicitly calls `profileStore.load(user)`. That
 operation:
 
 1. runs a transaction against `users/{uid}`;
-2. creates the document with server timestamps if it does not exist;
+2. creates the document from `createUserProfile()` if it does not exist;
 3. does nothing if it already exists;
 4. performs a one-time read and stores the result;
 5. opens no listener and does not affect session readiness.

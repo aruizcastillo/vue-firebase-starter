@@ -11,7 +11,7 @@ service cloud.firestore {
     //   - createdAt: timestamp (required, immutable)
     //   - updatedAt: timestamp (required)
     // Firebase Auth is the sole source for email, display name, and photo URL.
-    // This metadata-only document is an extension point for derived projects.
+    // Derived projects extend this schema together with profile.model.ts.
     // ===============================================================
 
     function isAuthenticated() {

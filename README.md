@@ -7,7 +7,7 @@ project, then connect it to its own Firebase environment.
 ## Included
 
 - Vue, TypeScript, Vue Router, Pinia, Vue-i18n, Tailwind CSS, shadcn-vue, Formisch and Valibot.
-- English and Spanish interface translations.
+- Configured interface translations, English and Spanish already included.
 - Email/password and Google authentication.
 - Registration, password reset and change, verified email change, and optional account deactivation.
 - Protected, public, guest-only, and optional restricted-account routes.
@@ -48,6 +48,11 @@ transitions; route guards are only a client-side user-experience layer.
 
 Projects that do not need profiles or account status can disable those features
 as described in [Choose the authentication mode](#choose-the-authentication-mode).
+
+To add application-owned profile fields, start in
+`src/models/profile.model.ts`: it contains both the TypeScript shape and the
+defaults used when `users/{uid}` is created. Update the matching Firestore Rules
+and their tests too.
 
 See [Data models and persistence](docs/data-models/README.md) for the exact
 stored shape and source of truth for every field.
@@ -172,14 +177,16 @@ variables.
 
 The three modes separate identity from optional application data. Firebase Auth
 always provides email, display name, and provider photo. The difference is
-whether the project enables `users/{uid}` and whether that document has an
+whether the project enables a private application profile and whether that document has an
 account status:
 
-- **Auth only:** no starter Firestore user document.
-- **Auth + profile:** a metadata-only private document, loaded or created on
-  demand and ready to extend with application-specific fields.
-- **Full:** the same metadata plus status, loaded at session startup so the
-  starter can react to account changes.
+- `auth-only` (default): uses Firebase Auth only.
+- `profile`: adds a private `users/{uid}` profile, loaded on demand and extensible with application-specific fields.
+- `full`: uses the same profile, adds status, and makes that status part of session startup and routing.
+
+> Application-specific fields belong to the profile, not Firebase Auth.
+
+> `full` mode does not introduce a separate profile model; it uses the same profile with session-aware account-status behavior.
 
 In `src/config/auth.config.ts`, change only `authMode` to select a mode:
 

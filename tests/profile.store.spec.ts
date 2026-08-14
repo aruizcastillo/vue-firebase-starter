@@ -16,7 +16,7 @@ vi.mock('@/config/auth.config', () => ({
 }))
 
 import { useProfileStore } from '@/stores/profile.store'
-import type { UserProfile } from '@/types/profile.types'
+import type { UserProfile } from '@/models/profile.model'
 
 interface ProfileListener {
   next: (profile: UserProfile | null) => void
