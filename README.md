@@ -89,6 +89,13 @@ token
 block and configure any variant behavior it needs; only the `dark` theme is
 currently wired to Tailwind's `dark:` variant.
 
+## Metadata and public resources
+
+- Define each page title and description in its route `meta`.
+- Customize the localized text in the `metadata.*` entries under `src/locales/`.
+- Replace the images in `public/` with your project's logos, favicons, and social-sharing images.
+- Before publishing, add your domain and indexable pages to `public/sitemap.xml`.
+
 ## Requirements
 
 - Node.js `^22.18.0` or `>=24.12.0`.
