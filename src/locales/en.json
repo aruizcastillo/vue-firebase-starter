@@ -145,5 +145,17 @@
     "accountReactivationFailed": "The account could not be reactivated.",
     "accountDeactivationFailed": "The account could not be deactivated."
   },
-  "notFound": { "title": "Page not found" }
+  "notFound": { "title": "Page not found" },
+  "metadata": {
+    "default": { "title": "Vue Firebase Starter", "description": "A starter template for building Vue SPAs with Firebase Authentication, Cloud Firestore, i18n, and shadcn-vue." },
+    "home": { "title": "Home · Vue Firebase Starter", "description": "Your authenticated Vue Firebase Starter home page." },
+    "accountSettings": { "title": "Account settings · Vue Firebase Starter", "description": "Manage your personal information, sign-in settings, and account status." },
+    "accountDeactivated": { "title": "Account restricted · Vue Firebase Starter", "description": "Review your account status and available account actions." },
+    "sessionError": { "title": "Session error · Vue Firebase Starter", "description": "Recover from a problem while starting your session." },
+    "welcome": { "title": "Vue Firebase Starter", "description": "A starter template for building Vue SPAs with Firebase Authentication, Cloud Firestore, i18n, and shadcn-vue." },
+    "login": { "title": "Sign in · Vue Firebase Starter", "description": "Sign in to your Vue Firebase Starter account." },
+    "register": { "title": "Create account · Vue Firebase Starter", "description": "Create a Vue Firebase Starter account." },
+    "forgotPassword": { "title": "Reset password · Vue Firebase Starter", "description": "Request a password reset link for your account." },
+    "notFound": { "title": "Page not found · Vue Firebase Starter", "description": "The page you requested could not be found." }
+  }
 }
