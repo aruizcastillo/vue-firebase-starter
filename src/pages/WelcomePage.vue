@@ -4,9 +4,9 @@ import { PageContainer } from '@/components/ui/page'
 
 <template>
   <PageContainer centered>
-    <h1>{{ $t('app.name') }}</h1>
+    <h1 class="text-3xl font-bold">{{ $t('app.name') }}</h1>
 
-    <p>
+    <p class="text-muted-foreground">
       {{ $t('welcome.description') }}
     </p>
   </PageContainer>

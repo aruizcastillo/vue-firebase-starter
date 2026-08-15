@@ -34,7 +34,7 @@ async function handleLogout(): Promise<void> {
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" :side-offset="6">
         <DropdownMenuGroup>
           <DropdownMenuLabel>
             <span class="truncate text-nowrap text-muted-foreground">
@@ -43,7 +43,7 @@ async function handleLogout(): Promise<void> {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <RouterLink class="block max-w-64 truncate text-inherit" :to="{ name: 'account-settings' }">{{ t('account.settings') }}</RouterLink>
+            <RouterLink :to="{ name: 'account-settings' }">{{ t('account.settings') }}</RouterLink>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout" class="text-destructive">

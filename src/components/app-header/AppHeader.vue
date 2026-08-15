@@ -20,7 +20,9 @@ const homeLocation = computed(() => {
 <template>
   <header class="flex gap-6 p-4 items-center" :class="isAuthenticated ? 'flex-row' : 'flex-col sm:flex-row'" :aria-label="$t('navigation.main')">
     <div class="flex w-full flex-row items-center justify-between gap-8">
-      <RouterLink class="text-inherit font-bold no-underline" :to="homeLocation">{{ $t('app.name') }}</RouterLink>
+      <RouterLink class="text-inherit font-bold no-underline" :to="homeLocation">
+        <img src="/logo.svg" :alt="$t('app.name')" class="size-8" />
+      </RouterLink>
       <div class="flex sm:hidden items-center gap-4">
         <ThemeDropdown />
         <LangDropdown />
@@ -37,5 +39,3 @@ const homeLocation = computed(() => {
     </div>
   </header>
 </template>
-dd2c00ff
-ffc400ff

@@ -1,6 +1,18 @@
 {
   "app": { "name": "Vue Firebase Starter" },
   "languages": { "en": "Inglés", "es": "Español" },
+  "metadata": {
+    "default": { "title": "Vue Firebase Starter", "description": "Una plantilla inicial para crear SPAs con Vue, Firebase Authentication, Cloud Firestore, i18n y shadcn-vue." },
+    "home": { "title": "Inicio · Vue Firebase Starter", "description": "Tu página de inicio autenticada de Vue Firebase Starter." },
+    "accountSettings": { "title": "Configuración de cuenta · Vue Firebase Starter", "description": "Gestiona tu información personal, ajustes de acceso y estado de cuenta." },
+    "accountDeactivated": { "title": "Cuenta restringida · Vue Firebase Starter", "description": "Revisa el estado de tu cuenta y las acciones disponibles." },
+    "sessionError": { "title": "Error de sesión · Vue Firebase Starter", "description": "Recupérate de un problema al iniciar tu sesión." },
+    "welcome": { "title": "Vue Firebase Starter", "description": "Una plantilla inicial para crear SPAs con Vue, Firebase Authentication, Cloud Firestore, i18n y shadcn-vue." },
+    "login": { "title": "Iniciar sesión · Vue Firebase Starter", "description": "Inicia sesión en tu cuenta de Vue Firebase Starter." },
+    "register": { "title": "Crear cuenta · Vue Firebase Starter", "description": "Crea una cuenta de Vue Firebase Starter." },
+    "forgotPassword": { "title": "Restablecer contraseña · Vue Firebase Starter", "description": "Solicita un enlace para restablecer la contraseña de tu cuenta." },
+    "notFound": { "title": "Página no encontrada · Vue Firebase Starter", "description": "No se ha encontrado la página solicitada." }
+  },
   "common": {
     "user": "Usuario",
     "email": "Correo electrónico",
@@ -54,7 +66,7 @@
     "reactivating": "Reactivando…"
   },
   "welcome": {
-    "description": "Una plantilla reutilizable de Vue con autenticación de Firebase, perfiles opcionales, rutas protegidas y emuladores locales."
+    "description": "Una plantilla inicial para crear SPAs con Vue, Firebase Authentication, Cloud Firestore, i18n y shadcn-vue."
   },
   "home": {
     "greeting": "Hola, {name}",

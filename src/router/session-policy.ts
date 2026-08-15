@@ -1,7 +1,7 @@
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 
 import { authConfig } from '@/config/auth.config'
-import type { UserAccountStatus } from '@/types/profile.types'
+import type { UserAccountStatus } from '@/models/profile.model'
 
 export interface SessionPolicyState {
   authenticated: boolean

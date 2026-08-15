@@ -5,9 +5,11 @@ import { defineStore } from 'pinia'
 
 import { authConfig } from '@/config/auth.config'
 import { ensureUserProfile, getUserProfile, observeUserProfile, setUserAccountStatus } from '@/services/profile.service'
-import type { ProfileOperationState, UserAccountStatus, UserProfile } from '@/types/profile.types'
+import type { UserAccountStatus, UserProfile } from '@/models/profile.model'
 import { getProfileErrorMessage } from '@/utils/profile-errors'
 import { i18n } from '@/i18n'
+
+type ProfileOperationState = 'idle' | 'connecting' | 'ready' | 'error'
 
 export const useProfileStore = defineStore('profile', () => {
   const profile = ref<UserProfile | null>(null)
