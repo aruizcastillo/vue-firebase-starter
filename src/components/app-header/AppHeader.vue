@@ -23,14 +23,14 @@ const homeLocation = computed(() => {
       <RouterLink class="text-inherit font-bold no-underline" :to="homeLocation">
         <img src="/logo.svg" :alt="$t('app.name')" class="size-8" />
       </RouterLink>
-      <div class="flex sm:hidden items-center gap-4">
+      <div class="flex sm:hidden items-center gap-2">
         <ThemeDropdown />
         <LangDropdown />
       </div>
     </div>
 
     <div class="flex items-center gap-4 self-end">
-      <div class="hidden sm:flex items-center gap-4">
+      <div class="hidden sm:flex items-center gap-2">
         <ThemeDropdown />
         <LangDropdown />
       </div>
