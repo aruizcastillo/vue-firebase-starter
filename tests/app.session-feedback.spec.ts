@@ -54,6 +54,8 @@ describe('application session feedback', () => {
     })
 
     expect(wrapper.find('[data-test="route-page"]').exists()).toBe(false)
+    expect(wrapper.get('.fixed svg[aria-label="Loading"]').exists()).toBe(true)
+    expect(wrapper.find('.fixed p').exists()).toBe(false)
 
     authStore.initialized = true
     await nextTick()

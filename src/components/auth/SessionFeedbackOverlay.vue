@@ -19,7 +19,8 @@ const router = useRouter()
 const { t } = useI18n()
 const isPreparingSession = ref(false)
 
-const visible = computed(() => sessionStore.isBlocking || isPreparingSession.value)
+const visible = computed(() => !sessionStore.isApplicationReady || sessionStore.isBlocking || isPreparingSession.value)
+const showInitialAuthCheck = computed(() => sessionStore.phase !== 'error' && !authStore.initialized && !isPreparingSession.value)
 const showError = computed(() => sessionStore.phase === 'error' && !isPreparingSession.value)
 const loadingMessage = computed(() => {
   if (isPreparingSession.value) return t('session.preparing')
@@ -60,7 +61,9 @@ async function signOut(): Promise<void> {
 
 <template>
   <PageContainer centered v-if="visible" class="fixed inset-0 z-50 bg-background/90 p-4 backdrop-blur-sm">
-    <Card v-if="showError" class="w-full max-w-md" role="alert" aria-live="assertive">
+    <Spinner v-if="showInitialAuthCheck" class="size-6" />
+
+    <Card v-else-if="showError" class="w-full max-w-md" role="alert" aria-live="assertive">
       <CardHeader class="text-center">
         <CardTitle>{{ t('session.errorTitle') }}</CardTitle>
         <CardDescription>{{ t('session.errorDescription') }}</CardDescription>
@@ -76,7 +79,7 @@ async function signOut(): Promise<void> {
 
     <div v-else class="flex flex-col items-center gap-3" role="status" aria-live="polite">
       <Spinner class="size-6" />
-      <p class="text-muted-foreground text-sm">{{ loadingMessage }}</p>
+      <p v-if="loadingMessage" class="text-muted-foreground text-sm">{{ loadingMessage }}</p>
     </div>
   </PageContainer>
 </template>
