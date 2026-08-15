@@ -19,7 +19,7 @@ watch(locale, (value) => setLocale(value as SupportedLocale))
     <DropdownMenuTrigger>
       <Button type="button" variant="ghost" class="flex items-center gap-2">
         <Languages />
-        <span class="hidden md:block">{{ t(`languages.${locale}`) }}</span>
+        <span>{{ t(`languages.${locale}`) }}</span>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">

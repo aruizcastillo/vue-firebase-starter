@@ -21,6 +21,13 @@ export const useSessionStore = defineStore('session', () => {
   const isBusy = computed(() => phase.value === 'restoring-auth' || phase.value === 'loading-profile')
   const isReady = computed(() => phase.value === 'ready')
   const isBlocking = computed(() => isBusy.value || phase.value === 'error')
+  const isApplicationReady = computed(() => {
+    if (phase.value === 'error') return true
+    if (!authStore.initialized) return false
+    if (!authStore.user || !authConfig.requiresAccountStatus) return true
+
+    return profileStore.state === 'ready'
+  })
 
   watch(
     () => authStore.user?.uid ?? null,
@@ -164,6 +171,7 @@ export const useSessionStore = defineStore('session', () => {
     isBusy,
     isReady,
     isBlocking,
+    isApplicationReady,
     ensureReady,
     retry,
   }

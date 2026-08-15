@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { setupDocumentMeta } from './router/document-meta'
 import { registerRouterGuards, registerSessionReconciliation } from './router/guards'
 import { i18n } from './i18n'
 
@@ -17,6 +18,7 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(i18n)
+setupDocumentMeta(router, i18n)
 registerRouterGuards(router, pinia)
 registerSessionReconciliation(router, pinia)
 app.use(router)

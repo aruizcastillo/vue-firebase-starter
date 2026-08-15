@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router'
 
 import { authConfig } from '@/config/auth.config'
+import type { DocumentMetaKey } from '@/router/meta'
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -8,6 +9,8 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/layouts/AppLayout.vue'),
     meta: {
       requiresAuth: true,
+      title: 'metadata.home.title',
+      description: 'metadata.home.description',
     },
     children: [
       {
@@ -19,6 +22,10 @@ export const routes: RouteRecordRaw[] = [
         path: 'account/settings',
         name: 'account-settings',
         component: () => import('@/pages/auth/AccountSettingsPage.vue'),
+        meta: {
+          title: 'metadata.accountSettings.title',
+          description: 'metadata.accountSettings.description',
+        },
       },
     ],
   },
@@ -30,6 +37,8 @@ export const routes: RouteRecordRaw[] = [
           meta: {
             requiresAuth: true,
             allowRestrictedAccount: true,
+            title: 'metadata.accountDeactivated.title' as DocumentMetaKey,
+            description: 'metadata.accountDeactivated.description' as DocumentMetaKey,
           },
           children: [
             {
@@ -45,10 +54,18 @@ export const routes: RouteRecordRaw[] = [
     path: '/session-error',
     name: 'session-error',
     component: () => import('@/pages/error/SessionErrorPage.vue'),
+    meta: {
+      title: 'metadata.sessionError.title',
+      description: 'metadata.sessionError.description',
+    },
   },
   {
     path: '/welcome',
     component: () => import('@/layouts/PublicLayout.vue'),
+    meta: {
+      title: 'metadata.welcome.title',
+      description: 'metadata.welcome.description',
+    },
     children: [
       {
         path: '',
@@ -71,16 +88,28 @@ export const routes: RouteRecordRaw[] = [
         path: '/login',
         name: 'login',
         component: () => import('@/pages/auth/LoginPage.vue'),
+        meta: {
+          title: 'metadata.login.title',
+          description: 'metadata.login.description',
+        },
       },
       {
         path: '/register',
         name: 'register',
         component: () => import('@/pages/auth/RegisterPage.vue'),
+        meta: {
+          title: 'metadata.register.title',
+          description: 'metadata.register.description',
+        },
       },
       {
         path: '/forgot-password',
         name: 'forgot-password',
         component: () => import('@/pages/auth/ForgotPasswordPage.vue'),
+        meta: {
+          title: 'metadata.forgotPassword.title',
+          description: 'metadata.forgotPassword.description',
+        },
       },
     ],
   },
@@ -88,5 +117,9 @@ export const routes: RouteRecordRaw[] = [
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/pages/error/NotFoundPage.vue'),
+    meta: {
+      title: 'metadata.notFound.title',
+      description: 'metadata.notFound.description',
+    },
   },
 ]
