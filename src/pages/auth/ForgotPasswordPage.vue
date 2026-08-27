@@ -72,7 +72,7 @@ const handleSubmit: SubmitHandler<typeof passwordResetSchema> = async ({ email }
           {{ authStore.operationLoading ? $t('buttons.sending') : $t('buttons.sendEmail') }}
         </Button>
         <CardAction class="pt-2 self-end">
-          <RouterLink to="/login" class="link-muted text-sm">{{ $t('navigation.backToSignIn') }}</RouterLink>
+          <RouterLink to="/login" class="link-muted text-sm">{{ $t('navigation.backToLogin') }}</RouterLink>
         </CardAction>
       </CardFooter>
     </Card>

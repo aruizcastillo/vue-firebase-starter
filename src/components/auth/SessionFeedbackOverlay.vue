@@ -73,7 +73,7 @@ async function signOut(): Promise<void> {
       </CardContent>
       <CardFooter class="flex flex-col gap-2">
         <Button type="button" class="w-full" @click="retry">{{ t('buttons.retry') }}</Button>
-        <Button type="button" variant="outline" class="w-full" @click="signOut">{{ t('navigation.signOut') }}</Button>
+        <Button type="button" variant="outline" class="w-full" @click="signOut">{{ t('navigation.logOut') }}</Button>
       </CardFooter>
     </Card>
 

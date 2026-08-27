@@ -9,6 +9,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 
+import { UserRoundCog, LogOut } from '@lucide/vue'
+
 const router = useRouter()
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -42,12 +44,16 @@ async function handleLogout(): Promise<void> {
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <RouterLink :to="{ name: 'account-settings' }">{{ t('account.settings') }}</RouterLink>
+          <DropdownMenuItem asChild class="w-full">
+            <RouterLink :to="{ name: 'account-settings' }">
+              <UserRoundCog />
+              {{ t('account.settings') }}
+            </RouterLink>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout" class="text-destructive">
-              {{ authStore.authStatus === 'signing-out' ? t('navigation.signingOut') : t('navigation.signOut') }}
+          <DropdownMenuItem asChild class="w-full">
+            <button type="button" :disabled="authStore.authStatus === 'signing-out'" @click="handleLogout" class="text-destructive hover:text-destructive!">
+              <LogOut />
+              {{ authStore.authStatus === 'signing-out' ? t('navigation.loggingOut') : t('navigation.logOut') }}
             </button>
           </DropdownMenuItem>
         </DropdownMenuGroup>

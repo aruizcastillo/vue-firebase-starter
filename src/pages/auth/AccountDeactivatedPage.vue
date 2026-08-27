@@ -49,7 +49,7 @@ async function signOut(): Promise<void> {
           {{ reactivating ? t('buttons.reactivating') : t('buttons.reactivateAccount') }}
         </Button>
         <Button type="button" variant="outline" class="w-full" :disabled="reactivating" @click="signOut">
-          {{ t('navigation.signOut') }}
+          {{ t('navigation.logOut') }}
         </Button>
       </CardContent>
     </Card>
